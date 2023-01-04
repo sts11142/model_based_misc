@@ -736,7 +736,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
 
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=True)
         for step, batch in enumerate(epoch_iterator):
-            #print("step:",step)
+            print("step:",step)
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
                 steps_trained_in_current_epoch -= 1
