@@ -744,15 +744,15 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
 
             input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, \
             decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st= batch
-            print(input_ids)
-            for item in input_ids:
-                print(len(item))
-                print(tokenizer.decode(item))
+            # print(input_ids)
+            # for item in input_ids:
+                # print(len(item))
+                # print(tokenizer.decode(item))
             # print(1 / 0)
             decoder_strategy_ids = decoder_strategy_ids[:, 0]  # [20, 48] → [20] 全範囲行，0列目をスライシング = 最初の縦一列
             decoder_strategy_ids = decoder_strategy_ids.to(args.device)
-            print(comet_ids)
-            print(comet_mask)
+            # print(comet_ids)
+            # print(comet_mask)
             # print(1 / 0)
             print(input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids)
             print("=="*100)
@@ -770,12 +770,14 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             comet_ids = comet_ids.view(-1, len_attr)
             with torch.no_grad():
                 comet_embs = model.model.encoder(comet_ids, attention_mask = comet_ids.ne(tokenizer.pad_token_id))[0][:,0,:]
+            print("ok_1")
             comet_embs = comet_embs.view(batch_size, n_attr, -1)
 
             batch_size, n_attr, len_attr = comet_ids_st.shape
             comet_ids_st = comet_ids_st.view(-1, len_attr)
             with torch.no_grad():
                 comet_embs_st = model.model.encoder(comet_ids_st, attention_mask=comet_ids_st.ne(tokenizer.pad_token_id))[0][:, 0, :]
+            print("ok_2")
             comet_embs_st = comet_embs_st.view(batch_size, n_attr, -1)
 
 
@@ -797,7 +799,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 outputs = model(input_ids, attention_mask = input_ids.ne(tokenizer.pad_token_id), decoder_input_ids=decoder_input_ids, decoder_turn_ids=decoder_turn_ids, decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,labels = decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids,  comet_embs=comet_embs,  comet_mask=comet_mask, emotion=emotion)
                 ppl = loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
             else:
+                print("ok_3")
                 outputs = model(input_ids, attention_mask = input_ids.ne(tokenizer.pad_token_id), decoder_input_ids=decoder_input_ids, decoder_turn_ids=decoder_turn_ids, decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,labels = decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids, comet_embs=comet_embs, comet_mask=comet_mask, comet_embs_st=comet_embs_st, comet_mask_st=comet_mask_st, emotion=emotion)
+                print("ok_4")
                 print(outputs.lm_logits, outputs.emo_logits)
                 print(outputs.loss, outputs.emo_loss, outputs.lm_loss)
                 # print(1 / 0)
