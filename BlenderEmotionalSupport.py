@@ -806,6 +806,8 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 emo_loss = outputs.emo_loss
                 intensity_loss = outputs.intensity_loss
                 strategy_loss = outputs.strategy_loss
+
+            print("ok")
             
             # if not args.no_cuda and args.n_gpu >= 1:
             #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
