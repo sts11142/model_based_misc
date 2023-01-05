@@ -748,12 +748,12 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             for item in input_ids:
                 print(len(item))
                 print(tokenizer.decode(item))
-            print(1 / 0)
+            # print(1 / 0)
             decoder_strategy_ids = decoder_strategy_ids[:, 0]  # [20, 48] → [20] 全範囲行，0列目をスライシング = 最初の縦一列
             decoder_strategy_ids = decoder_strategy_ids.to(args.device)
             print(comet_ids)
             print(comet_mask)
-            print(1 / 0)
+            # print(1 / 0)
             print(input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids)
             print("=="*100)
 
@@ -800,7 +800,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 outputs = model(input_ids, attention_mask = input_ids.ne(tokenizer.pad_token_id), decoder_input_ids=decoder_input_ids, decoder_turn_ids=decoder_turn_ids, decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,labels = decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids, comet_embs=comet_embs, comet_mask=comet_mask, comet_embs_st=comet_embs_st, comet_mask_st=comet_mask_st, emotion=emotion)
                 print(outputs.lm_logits, outputs.emo_logits)
                 print(outputs.loss, outputs.emo_loss, outputs.lm_loss)
-                print(1 / 0)
+                # print(1 / 0)
                 loss = outputs.loss
                 lm_loss = ppl = outputs.lm_loss
                 emo_loss = outputs.emo_loss
