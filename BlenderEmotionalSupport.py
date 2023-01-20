@@ -830,6 +830,8 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 # else:
                 #     backward_loss = outputs.loss
                 backward_loss.backward()
+            
+            print("finished backward()")
 
             tr_loss += loss.item()
             tr_lm_loss += lm_loss.item()
