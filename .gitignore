@@ -1,3 +1,7 @@
 /runs/
 /blender-small/
 __pychache__/
+
+blender_strategy/all_loss
+
+!.keep
