@@ -1,6 +1,7 @@
 /runs/
 /blender-small/
 __pychache__/
+*.pyc
 
 blender_strategy/all_loss
 
