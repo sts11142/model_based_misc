@@ -4,5 +4,8 @@ __pychache__/
 *.pyc
 
 blender_strategy/all_loss
+blender_strategy/
+generated_data/
+!generated_data/.keep
 
 !.keep
