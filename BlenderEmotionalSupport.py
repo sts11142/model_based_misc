@@ -734,10 +734,10 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
         #     for paras in model.model.decoder.parameters():
         #         paras.requires_grad = True
 
-        # epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=True)
-        # for step, batch in enumerate(epoch_iterator):
-        for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration", disable=True)):
-            print("step:",step)
+        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=True)
+        for step, batch in enumerate(epoch_iterator):
+        # for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration", disable=True)):
+            # print("step:",step)
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
                 steps_trained_in_current_epoch -= 1
