@@ -66,8 +66,8 @@ class Args():
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
         nowtime = '01211638'
-    #    self.output_dir = os.path.join('blender_strategy', TAG)
-        self.output_dir = os.path.join('blender_strategy', nowtime)
+        self.output_dir = os.path.join('blender_strategy', TAG)
+        # self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
         # self.generation_dir = os.path.join('generated_data', TAG)
         self.generation_dir = os.path.join('generated_data', nowtime)
