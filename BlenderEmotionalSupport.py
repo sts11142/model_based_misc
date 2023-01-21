@@ -1317,11 +1317,11 @@ def generate(args):
         # else:
         #     strategy_hits.append(0)
         refs.append(tokenizer.decode(chat_history_ids[:, :][0], skip_special_tokens=True))
-        print(tokenizer.decode(chat_history_ids[:, :][0], skip_special_tokens=True))
+        # print(tokenizer.decode(chat_history_ids[:, :][0], skip_special_tokens=True))
         strategy_record.append({"ref strategy":tokenizer.decode([next_strategy_id + 54944]),  "hyp strategy":tokenizer.decode([strategy_logits[0].argmax()+54944])})
         # print({"ref strategy":tokenizer.decode([next_strategy_id + 54944]),  "hyp strategy":tokenizer.decode([chat_history_ids[:, :][0][1]])})
-        print({"ref strategy": tokenizer.decode([next_strategy_id + 54944]),
-               "hyp strategy": tokenizer.decode([strategy_logits[0].argmax() + 54944])})
+        # print({"ref strategy": tokenizer.decode([next_strategy_id + 54944]),
+            #    "hyp strategy": tokenizer.decode([strategy_logits[0].argmax() + 54944])})
         if strategy_logits[0].argmax() == next_strategy_id:
             strategy_hits.append(1)
         else:
@@ -1350,6 +1350,7 @@ def generate(args):
     reference_file_path = os.path.join(args.generation_dir, "ref_strategy.json")
     summary_file_path = os.path.join(args.generation_dir, "summary.txt")
     strategy_logits_file = os.path.join(args.generation_dir, "strategy_logits.txt")
+    metrics_file_path = os.path.join(args.generation_dir, "metrics_result.txt")
     with open(strategy_logits_file, "w", encoding="utf-8") as f:
         for item in strategy_logit_str:
             f.write(item + '\n')
@@ -1367,6 +1368,8 @@ def generate(args):
     metric = Metric(toker=tokenizer, hyp_path=generate_file_path, ref_path=reference_file_path)
     result, result_list = metric.close()
     print(result)
+    with open(metrics_file_path, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
     print("=" * 100)
 
 if __name__ == "__main__":
