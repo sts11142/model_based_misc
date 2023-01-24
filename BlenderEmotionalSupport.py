@@ -44,6 +44,10 @@ from src.transformers import (
     get_linear_schedule_with_warmup,
 )
 
+from src.cem import config
+from src.cem.constants import EMO_MAP as emo_map
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
 from src.transformers import (BlenderbotSmallTokenizer, BlenderbotSmallForConditionalGeneration, BlenderbotSmallConfig)
 #from utils.data_parallel import BalancedDataParallel
 try:
@@ -59,15 +63,25 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 # Args to allow for easy convertion of python script to notebook
 class Args():
     def __init__(self):
+        r"""
+            変更箇所：
+                nowtime
+                    TAG -> nowtime
+                output_dir
+                generation_dir
+                no_cuda
+                    False じゃないとcolabも落ちる
+        """
+
         TAG = 'all_loss'
         # TAG = 'emotion'
         # TAG = 'ablation_strategy'
         # TAG = 'ablation_situation'
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
-        nowtime = '01211638'
-        self.output_dir = os.path.join('blender_strategy', TAG)
-        # self.output_dir = os.path.join('blender_strategy', nowtime)
+        nowtime = '01211835'
+        # self.output_dir = os.path.join('blender_strategy', TAG)
+        self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
         # self.generation_dir = os.path.join('generated_data', TAG)
         self.generation_dir = os.path.join('generated_data', nowtime)
@@ -429,7 +443,7 @@ def construct_conv_ESD(idx, row, comet_row, comet_st_row, tokenizer, eos = True,
 
 
 class ESDDataset(Dataset):
-    def __init__(self, tokenizer: PreTrainedTokenizer, args, df, comet, comet_st, block_size=512, evaluate=False, strategy=True, test=False):
+    def __init__(self, tokenizer: PreTrainedTokenizer, args, df, comet, comet_st, pre_data, vocab, block_size=512, evaluate=False, strategy=True, test=False):
         block_size = block_size - (tokenizer.model_max_length - tokenizer.max_len_single_sentence)
         self.tokenizer = tokenizer
         directory = args.data_cache_dir
@@ -462,6 +476,7 @@ class ESDDataset(Dataset):
             for idx, (row, comet_row, comet_st_row) in enumerate(zip(df[:-1], comet[:-1], comet_st[:-1])):
                 conv = construct_conv_ESD(idx, row, comet_row, comet_st_row, tokenizer, cls=False, strategy=strategy ,evaluate=evaluate)
                 if len(conv.input_ids) >= block_size:
+                    # block_size(=512)を超えたら，最初の方をカットする
                     conv.input_ids = conv.input_ids[-block_size:]
                     conv.input_ids[0] = tokenizer.encode(tokenizer.cls_token)[0]
                 else:
@@ -477,6 +492,48 @@ class ESDDataset(Dataset):
                 pickle.dump(self.features, handle, protocol=pickle.HIGHEST_PROTOCOL)
             logger.info("Finished~")
 
+        # cemのDatasetクラス部分の移植
+        self.vocab = vocab
+        self.data = pre_data
+        self.emo_map = emo_map
+        self.analyzer = SentimentIntensityAnalyzer()
+
+        for (index, feature) in enumerate(self.features):
+            feature.context_text = self.data["context"][index]
+            feature.situation_text = self.data["situation"][index]
+            feature.target_text = self.data["target"][index]
+            feature.emotion_text = self.data["emotion"][index]
+            feature.emotion_context = self.data["emotion_context"][index]
+
+            feature.context_emotion_scores = self.analyzer.polarity_scores(
+                " ".join(self.data["context"][index][0])
+            )
+
+            feature.context, feature.context_mask = self.preprocess(feature.context_text)
+            feature.target = self.preprocess(feature.target_text, anw=True)
+            feature.emotion, feature.emotion_label = self.preprocess_emo(
+                feature.emotion_text, self.emo_map
+            )
+            (
+                feature.emotion_context,
+                feature.emotion_context_mask,
+            ) = self.preprocess(feature.emotion_context)
+
+            feature.cs_text = self.data["utt_cs"][index]
+            feature.x_intent_txt = feature.cs_text[0]
+            feature.x_need_txt = feature.cs_text[1]
+            feature.x_want_txt = feature.cs_text[2]
+            feature.x_effect_txt = feature.cs_text[3]
+            feature.x_react_txt = feature.cs_text[4]
+
+            feature.x_intent = self.preprocess(feature.x_intent_txt, cs=True)
+            feature.x_need = self.preprocess(feature.x_need_txt, cs=True)
+            feature.x_want = self.preprocess(feature.x_want_txt, cs=True)
+            feature.x_effect = self.preprocess(feature.x_effect_txt, cs=True)
+            feature.x_react = self.preprocess(feature.x_react_txt, cs="react")
+
+            # if (index == 0):
+                # print("feature.target: ", feature.target_text)
 
     def __len__(self):
         return len(self.features)
@@ -486,6 +543,93 @@ class ESDDataset(Dataset):
 
     @staticmethod
     def collate(features):
+        # CEM's func
+        def merge(sequences):
+            lengths = [len(seq) for seq in sequences]
+            padded_seqs = torch.ones(
+                len(sequences), max(lengths)
+            ).long()  ## padding index 1
+            for i, seq in enumerate(sequences):
+                end = lengths[i]
+                padded_seqs[i, :end] = seq[:end]
+            return padded_seqs, lengths
+        
+        keys = [
+            "context_text",
+            "situation_text",
+            "target_text",
+            "emotion_text",
+            "emotion_context",
+            "context_emotion_scores",
+            "context",
+            "context_mask",
+            "target",
+            "emotion",
+            "emotion_label",
+            "emotion_context_mask",
+            "cs_text",
+            "x_intent_txt",
+            "x_need_txt",
+            "x_want_txt",
+            "x_effect_txt",
+            "x_react_txt",
+            "x_intent",
+            "x_need",
+            "x_want",
+            "x_effect",
+            "x_react",
+        ]
+
+        data = features
+        # data.sort(key=lambda x: len(x["context"]), reverse=True)  ## sort by source seq
+        item_info = {}
+        for key in keys:
+            item_info[key] = [getattr(d, key) for d in data]
+        
+        print(item_info["context_text"][0])
+        # for key in data[0].keys():
+        #     item_info[key] = [d[key] for d in data]
+
+        ## input
+        input_batch, input_lengths = merge(item_info["context"])
+        mask_input, mask_input_lengths = merge(item_info["context_mask"])
+        emotion_batch, emotion_lengths = merge(item_info["emotion_context"])
+
+        ## Target
+        target_batch, target_lengths = merge(item_info["target"])
+
+        input_batch = input_batch.to(config.device)
+        mask_input = mask_input.to(config.device)
+        target_batch = target_batch.to(config.device)
+
+        d = {}
+        d["input_batch"] = input_batch
+        d["input_lengths"] = torch.LongTensor(input_lengths)
+        d["mask_input"] = mask_input
+        d["target_batch"] = target_batch
+        d["target_lengths"] = torch.LongTensor(target_lengths)
+        d["emotion_context_batch"] = emotion_batch.to(config.device)
+
+        ##program
+        d["target_program"] = item_info["emotion"]
+        d["program_label"] = item_info["emotion_label"]
+
+        ##text
+        d["input_txt"] = item_info["context_text"]
+        d["target_txt"] = item_info["target_text"]
+        d["program_txt"] = item_info["emotion_text"]
+        d["situation_txt"] = item_info["situation_text"]
+
+        d["context_emotion_scores"] = item_info["context_emotion_scores"]
+
+        relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
+        for r in relations:
+            pad_batch, _ = merge(item_info[r])
+            pad_batch = pad_batch.to(config.device)
+            d[r] = pad_batch
+            d[f"{r}_txt"] = item_info[f"{r}_txt"]
+
+
         input_ids = pad_sequence([torch.tensor(f.input_ids, dtype=torch.long)
                                   for f in features],
                                  batch_first=True, padding_value=0)
@@ -548,11 +692,71 @@ class ESDDataset(Dataset):
         comet_st_ids = torch.tensor([f.comet_st_ids for f in features], dtype=torch.long)
         comet_st_mask = torch.tensor([f.comet_st_mask for f in features], dtype=torch.long)
 
-        return (input_ids, position_ids, token_type_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_token_type_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_st_ids, comet_st_mask)
+        return (input_ids, position_ids, token_type_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_token_type_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_st_ids, comet_st_mask, d)
+    
+    def preprocess(self, arr, anw=False, cs=None, emo=False):
+        """Converts words to ids."""
+        if anw:
+            sequence = [
+                self.vocab.word2index[word]
+                if word in self.vocab.word2index
+                else config.UNK_idx
+                for word in arr
+            ] + [config.EOS_idx]
+
+            return torch.LongTensor(sequence)
+        elif cs:
+            sequence = [config.CLS_idx] if cs != "react" else []
+            for sent in arr:
+                sequence += [
+                    self.vocab.word2index[word]
+                    for word in sent
+                    if word in self.vocab.word2index and word not in ["to", "none"]
+                ]
+
+            return torch.LongTensor(sequence)
+        elif emo:
+            x_emo = [config.CLS_idx]
+            x_emo_mask = [config.CLS_idx]
+            for i, ew in enumerate(arr):
+                x_emo += [
+                    self.vocab.word2index[ew]
+                    if ew in self.vocab.word2index
+                    else config.UNK_idx
+                ]
+                x_emo_mask += [self.vocab.word2index["CLS"]]
+
+            assert len(x_emo) == len(x_emo_mask)
+            return torch.LongTensor(x_emo), torch.LongTensor(x_emo_mask)
+
+        else:
+            x_dial = [config.CLS_idx]
+            x_mask = [config.CLS_idx]
+            for i, sentence in enumerate(arr):
+                x_dial += [
+                    self.vocab.word2index[word]
+                    if word in self.vocab.word2index
+                    else config.UNK_idx
+                    for word in sentence
+                ]
+                spk = (
+                    self.vocab.word2index["USR"]
+                    if i % 2 == 0
+                    else self.vocab.word2index["SYS"]
+                )
+                x_mask += [spk for _ in range(len(sentence))]
+            assert len(x_dial) == len(x_mask)
+
+            return torch.LongTensor(x_dial), torch.LongTensor(x_mask)
+
+    def preprocess_emo(self, emotion, emo_map):
+        program = [0] * len(emo_map)
+        program[emo_map[emotion]] = 1
+        return program, emo_map[emotion]
 
 
-def load_and_cache_examples(args, tokenizer, df, comet, comet_st, evaluate=False, strategy=True, test=False):
-    return ESDDataset(tokenizer, args, df, comet, comet_st, evaluate=evaluate, strategy=strategy, test=test)
+def load_and_cache_examples(args, tokenizer, df, comet, comet_st, pre_data, vocab, evaluate=False, strategy=True, test=False):
+    return ESDDataset(tokenizer, args, df, comet, comet_st, pre_data, vocab, evaluate=evaluate, strategy=strategy, test=test)
 
 def set_seed(args):
     random.seed(args.seed)
@@ -747,7 +951,10 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 continue
 
             input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, \
-            decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st= batch
+            decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st, d= batch
+
+            print("d['input_text']: ", d["input_txt"])
+
             # print(input_ids)
             # for item in input_ids:
                 # print(len(item))
@@ -1153,12 +1360,18 @@ def main(args):
         st_comet_test = f.read().split("\n")
     with open(args.data_path+"/" + args.test_file_name, "r", encoding="utf-8") as f:
         df_test = f.read().split("\n")
+
+    # load preproc data
+    with open("./dataset/"+"dataset_preproc.p", "rb") as f:
+        [data_tra, data_val, data_tst, vocab] = pickle.load(f)
+        print("dataset_preproc sample: ",data_tra["emotion"], len(data_tra["emotion"]))
+
     # comet_trn,st_comet_trn, df_trn = comet_trn[:5000 + 1], st_comet_trn[:5000 + 1], df_trn[:5000 + 1]
     # comet_val, st_comet_val, df_val = comet_val[:100 + 1], st_comet_val[:100 + 1], df_val[:100 + 1]
     # comet_test, st_comet_test, df_test = comet_test[:100 + 1], st_comet_test[:100 + 1], df_test[:100 + 1]
 
-    args.eval_dataset = load_and_cache_examples(args, tokenizer, df_val, comet_val, st_comet_val, evaluate=True, strategy=args.strategy, test=False)
-    args.test_dataset = load_and_cache_examples(args, tokenizer, df_test, comet_test, st_comet_test, evaluate=True, strategy=args.strategy, test=True)
+    args.eval_dataset = load_and_cache_examples(args, tokenizer, df_val, comet_val, st_comet_val, data_val, vocab, evaluate=True, strategy=args.strategy, test=False)
+    args.test_dataset = load_and_cache_examples(args, tokenizer, df_test, comet_test, st_comet_test, data_tst, vocab, evaluate=True, strategy=args.strategy, test=True)
 
 
 
@@ -1166,7 +1379,7 @@ def main(args):
     if args.do_train:
         # Create output directory if needed
         os.makedirs(args.output_dir, exist_ok=True)
-        args.train_dataset = load_and_cache_examples(args, tokenizer, df_trn, comet_trn, st_comet_trn, evaluate=False, strategy=args.strategy)
+        args.train_dataset = load_and_cache_examples(args, tokenizer, df_trn, comet_trn, st_comet_trn, data_tra, vocab, evaluate=False, strategy=args.strategy)
         global_step, tr_loss = train(args, args.train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
         model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir, from_tf=False)
@@ -1368,6 +1581,7 @@ def generate(args):
     metric = Metric(toker=tokenizer, hyp_path=generate_file_path, ref_path=reference_file_path)
     result, result_list = metric.close()
     print(result)
+    result['acc'] = sum(strategy_hits)/len(strategy_hits)
     with open(metrics_file_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
     print("=" * 100)

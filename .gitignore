@@ -7,5 +7,8 @@ blender_strategy/all_loss/*
 blender_strategy/*
 /generated_data/*
 # !/generated_data/.keep
-
 !.keep
+
+dataset_preproc.p
+
+testscript.txt
