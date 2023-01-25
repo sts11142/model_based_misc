@@ -1231,8 +1231,8 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, eval_
             # print(emotion)
             for idx, emo_logit in enumerate(emo_logits):
                 print("bef: ", emo_logit.argmax())
-                print("aff: ", emotion[idx])
-                if emo_logit.argmax() == emotion[idx]:
+                print("aff: ", emotion[idx].argmax())
+                if emo_logit.argmax() == emotion[idx].argmax():
                     emo_hits.append(1)
                 else:
                     emo_hits.append(0)
