@@ -119,7 +119,11 @@ vae = args.vae
 eq6_loss = args.eq6_loss
 vader_loss = args.vader_loss
 init_emo_emb = args.init_emo_emb
-device = torch.device("cuda" if args.cuda else "cpu")
+
+# device = torch.device("cuda" if args.cuda else "cpu")
+# device = torch.device("cpu")
+device = torch.device("cuda")
+
 pointer_gen = args.pointer_gen
 is_coverage = args.is_coverage
 use_oov_emb = args.use_oov_emb

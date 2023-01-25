@@ -16,6 +16,7 @@
 
 from ...configuration_utils import PretrainedConfig
 from ...utils import logging
+import torch
 
 
 logger = logging.get_logger(__name__)

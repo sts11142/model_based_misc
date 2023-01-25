@@ -333,14 +333,21 @@ class BlenderbotSmallAttention(nn.Module):
 
 # Copied from transformers.models.bart.modeling_bart.BartEncoderLayer with Bart->BlenderbotSmall
 class BlenderbotSmallEncoderLayer(nn.Module):
-    def __init__(self, config: BlenderbotSmallConfig):
+    def __init__(self, config: BlenderbotSmallConfig, twice=False):
         super().__init__()
         self.embed_dim = config.d_model
+        # if (twice == False):
+            # self.embed_dim = config.d_model
+        # else:
+            # self.embed_dim = config.d_model * 2
         self.self_attn = BlenderbotSmallAttention(
             embed_dim=self.embed_dim,
             num_heads=config.encoder_attention_heads,
             dropout=config.attention_dropout,
         )
+
+        self.embedding_proj = nn.Linear(self.embed_dim, config.d_model)
+
         self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
         self.attn_layer_norm_comet = nn.LayerNorm(self.embed_dim)
         self.dropout = config.dropout
@@ -453,6 +460,12 @@ class BlenderbotSmallDecoderLayer(nn.Module):
             dropout=config.attention_dropout,
             is_decoder=True,
         )
+        self.encoder_attn_empathy= BlenderbotSmallAttention(
+            self.embed_dim,
+            config.decoder_attention_heads,
+            dropout=config.attention_dropout,
+            is_decoder=True,
+        )
         self.encoder_attn_layer_norm = nn.LayerNorm(self.embed_dim)
         self.encoder_attn_layer_norm_strategy = nn.LayerNorm(self.embed_dim)
         self.encoder_attn_layer_norm_comet = nn.LayerNorm(self.embed_dim)
@@ -474,6 +487,7 @@ class BlenderbotSmallDecoderLayer(nn.Module):
         comet_hidden_states_st: Optional[torch.Tensor] = None,
         comet_mask_st: Optional[torch.Tensor] = None,
         strategy_embs: Optional[torch.Tensor] = None,
+        cog_ref_ctx: Optional[torch.Tensor] = None,
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = True,
@@ -584,6 +598,15 @@ class BlenderbotSmallDecoderLayer(nn.Module):
             )
             hidden_states_st = F.dropout(hidden_states_st, p=self.dropout, training=self.training)
 
+            hidden_states_empathy, _, _ = self.encoder_attn_empathy(
+                hidden_states=hidden_states,
+                key_value_states=cog_ref_ctx,
+                attention_mask=encoder_attention_mask,
+                # past_key_value=cross_attn_past_key_value,
+                # output_attentions=output_attentions,
+            )
+            hidden_states_empathy = F.dropout(hidden_states_empathy, p=self.dropout, training=self.training)
+
             # hidden_states = torch.cat([hidden_states_encoder, hidden_states_strategy, hidden_states_st, hidden_states_sp], dim=-1)
             # hidden_states = self.activation_fn(self.fc_multimodule(hidden_states))
             # hidden_states = F.dropout(hidden_states, p=self.activation_dropout, training=self.training)
@@ -594,7 +617,7 @@ class BlenderbotSmallDecoderLayer(nn.Module):
             # hidden_states = F.dropout(hidden_states, p=self.activation_dropout, training=self.training)
             # hidden_states = residual + hidden_states
             # hidden_states = residual + hidden_states_encoder + hidden_states_strategy
-            hidden_states = residual + hidden_states_encoder + hidden_states_st +  hidden_states_sp + hidden_states_strategy
+            hidden_states = residual + hidden_states_encoder + hidden_states_st +  hidden_states_sp + hidden_states_strategy + hidden_states_empathy
             hidden_states = self.encoder_attn_layer_norm(hidden_states)
 
 
@@ -820,13 +843,16 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         embed_tokens (torch.nn.Embedding): output embedding
     """
 
-    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None):
+    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None, twice=False):
         super().__init__(config)
 
         self.dropout = config.dropout
         self.layerdrop = config.encoder_layerdrop
 
-        embed_dim = config.d_model
+        if (twice == False):
+            embed_dim = config.d_model
+        else:
+            embed_dim = config.d_model * 2
         self.padding_idx = config.pad_token_id
         self.max_source_positions = config.max_position_embeddings
         self.embed_scale = math.sqrt(embed_dim) if config.scale_embedding else 1.0
@@ -842,8 +868,10 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
             self.padding_idx,
         )
 
-        self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config) for _ in range(config.encoder_layers)])
+        self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config, twice=twice) for _ in range(config.encoder_layers)])
         self.layernorm_embedding = nn.LayerNorm(embed_dim)
+
+        self.embedding_proj = nn.Linear(embed_dim, config.d_model)
 
         self.emotion_head = nn.Linear(config.d_model, 11)
         self.intensity_head = nn.Linear(config.d_model, 1) # 512次元 -> 1次元
@@ -875,6 +903,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         strategy_logit_ground=None,
+        d=None,
     ):
 
         r"""
@@ -943,6 +972,9 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         hidden_states = inputs_embeds + embed_pos
         hidden_states = self.layernorm_embedding(hidden_states)
         hidden_states = F.dropout(hidden_states, p=self.dropout, training=self.training)
+
+        # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
+        hidden_states = self.embedding_proj(hidden_states)
 
         attention_mask_for_muAttn = attention_mask.clone()
 
@@ -1110,6 +1142,7 @@ class BlenderbotSmallDecoder(BlenderbotSmallPreTrainedModel):
         strategy_embs=None,
         past_key_values=None,
         inputs_embeds=None,
+        cog_ref_ctx=None,
         use_cache=None,
         role_ids=None,
         turn_ids=None,
@@ -1292,6 +1325,7 @@ class BlenderbotSmallDecoder(BlenderbotSmallPreTrainedModel):
                     comet_hidden_states_st=comet_hidden_states_st,
                     comet_mask_st=comet_mask_st,
                     strategy_embs = strategy_embs,  # この時点でh^gになっている
+                    cog_ref_ctx=cog_ref_ctx,
                     past_key_value=past_key_value,
                     output_attentions=output_attentions,
                     use_cache=use_cache,
@@ -1339,6 +1373,8 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.encoder = BlenderbotSmallEncoder(config, self.shared)
         self.decoder = BlenderbotSmallDecoder(config, self.shared)
 
+        self.encoder_2 = BlenderbotSmallEncoder(config, self.shared, twice=True)
+
         self.init_weights()
 
     def get_input_embeddings(self):
@@ -1349,8 +1385,11 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.encoder.embed_tokens = self.shared
         self.decoder.embed_tokens = self.shared
 
-    def get_encoder(self):
-        return self.encoder
+    def get_encoder(self, twice=False):
+        if (twice):
+            return self.encoder_2
+        else:
+            return self.encoder
 
     def get_decoder(self):
         return self.decoder
@@ -1477,6 +1516,29 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         )
 
 
+class MLP(nn.Module):
+    def __init__(self, config: BlenderbotSmallConfig):
+        super(MLP, self).__init__()
+        input_num = 5
+        input_dim = input_num * config.d_model
+        hid_num = 3
+        hid_dim = hid_num * config.d_model
+        out_dim = config.d_model
+
+        self.lin_1 = nn.Linear(input_dim, hid_dim, bias=False)
+        self.lin_2 = nn.Linear(hid_dim, out_dim, bias=False)
+
+        self.act = nn.ReLU()
+
+    def forward(self, x):
+        x = self.lin_1(x)
+        x = self.act(x)
+        x = self.lin_2(x)
+
+        return x
+
+
+
 @add_start_docstrings(
     "The BlenderbotSmall Model with a language modeling head. Can be used for summarization.",
     BLENDERBOT_SMALL_START_DOCSTRING,
@@ -1496,11 +1558,27 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         self.register_buffer("final_logits_bias", torch.zeros((1, self.model.shared.num_embeddings)))
         self.lm_head = nn.Linear(config.d_model, self.model.shared.num_embeddings, bias=False)
 
+        # cem_module
+        # self.padding_idx, vocab_size = config.pad_token_id, config.vocab_size
+        get_input_tokens = self.get_input_embeddings()
+        self.emb_tokens = get_input_tokens
+        self.rels = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
+        self.cem_encoder = self.get_encoder()
+        self.cem_emo_encoder = self.get_encoder()
+        self.cem_cog_encoder = self.get_encoder()
+        self.cem_emo_ref_encoder = self.get_encoder(twice=True)
+        self.cem_cog_ref_encoder = self.get_encoder(twice=True)
+        self.cem_emo_lin = nn.Linear(config.d_model, 11, bias=False)
+        self.cem_cog_lin = MLP(config)
+
         self.dropout = config.dropout
         self.init_weights()
 
-    def get_encoder(self):
-        return self.model.get_encoder()
+    def get_encoder(self, twice=False):
+        if (twice):
+            return self.model.get_encoder(twice=twice)
+        else:
+            return self.model.get_encoder()
 
     def get_decoder(self):
         return self.model.get_decoder()
@@ -1554,6 +1632,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         emotion=None,
         output_attentions=None,
         output_hidden_states=None,
+        d=None,
         return_dict=None,
     ):
 
@@ -1594,11 +1673,58 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
                 role_ids=role_ids,
                 turn_ids=decoder_turn_ids[:, 0],
                 return_dict=return_dict,
-                strategy_logit_ground = strategy_logit_ground,
-
+                strategy_logit_ground=strategy_logit_ground,
+                d=d,
             )
         # print(decoder_input_ids)
 
+        # cem_module
+        # Commonsense relations
+        enc_batch = d["input_batch"]
+        # src_mask = enc_batch.data.eq(1).unsqueeze(1)
+        src_mask = enc_batch.data.eq(1).eq(False)
+
+        enc_outputs = encoder_outputs.last_hidden_state
+        cs_embs = []
+        cs_masks = []
+        cs_outputs = []
+        for r in self.rels:
+            # device = torch.device("cpu")
+            device = torch.device("cuda")
+            emb = self.emb_tokens(d[r]).to(device)
+            # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
+            mask = d[r].data.eq(1).eq(False)
+            cs_embs.append(emb)
+            cs_masks.append(mask)
+            if r != "x_react":
+                enc_output = self.cem_cog_encoder(inputs_embeds=emb, attention_mask=mask)
+            else:
+                enc_output = self.cem_emo_encoder(inputs_embeds=emb, attention_mask=mask)
+            cs_outputs.append(enc_output.last_hidden_state)
+
+        cls_tokens = [c[:, 0].unsqueeze(1) for c in cs_outputs]
+
+        # Shape: batch_size * 1 * 300
+        cog_cls = cls_tokens[:-1]
+        emo_cls = torch.mean(cs_outputs[-1], dim=1).unsqueeze(1)
+
+        dim = [-1, enc_outputs.shape[1], -1]
+        # Emotion
+        emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
+        emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
+        emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
+
+        # Cognition
+        cog_outputs = []
+        for cls in cog_cls:
+            cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
+            cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
+            cog_outputs.append(cog_concat_enc.last_hidden_state)
+
+        cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx], dim=-1)
+        cog_contrib = nn.Sigmoid()(cog_ref_ctx)
+        cog_ref_ctx = cog_contrib * cog_ref_ctx
+        cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
 
         # if decoder_input_ids.shape[-1] > 1 and not generate:
         #     strategy_label = decoder_input_ids[:, 0] - 54944
@@ -1630,6 +1756,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             strategy_embs=encoder_outputs.strategy_embs,
             past_key_values=past_key_values,
             inputs_embeds=decoder_inputs_embeds,
+            cog_ref_ctx=cog_ref_ctx,
             use_cache=use_cache,
             role_ids=decoder_role_ids,
             turn_ids=decoder_turn_ids,
@@ -1664,8 +1791,9 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         if emotion is not None:
             emo_loss_fct = CrossEntropyLoss()
             # print(emotion_logits.shape, emotion)
-            emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
-            # loss += emo_loss
+            # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
+            emo_loss = emo_loss_fct(emo_logits_cem.view(-1, 11), emotion.view(-1))
+            loss += emo_loss
 
         intensity_label = None
         if decoder_turn_ids is not None:

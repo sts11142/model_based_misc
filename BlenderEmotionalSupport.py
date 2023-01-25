@@ -123,8 +123,8 @@ class Args():
         self.save_steps = 30
         self.save_total_limit = None
         self.eval_all_checkpoints = False
-        # self.no_cuda = False
-        self.no_cuda = True
+        # self.no_cuda = True
+        self.no_cuda = False
         self.overwrite_output_dir = True
         self.overwrite_cache = False
         self.should_continue = False
@@ -951,9 +951,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 continue
 
             input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, \
-            decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st, d= batch
+            decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st, d = batch
 
-            print("d['input_text']: ", d["input_txt"])
+            # print("d['input_text']: ", d["input_txt"])
 
             # print(input_ids)
             # for item in input_ids:
@@ -1011,7 +1011,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                 ppl = loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
             else:
                 # print("ok_3")
-                outputs = model(input_ids, attention_mask = input_ids.ne(tokenizer.pad_token_id), decoder_input_ids=decoder_input_ids, decoder_turn_ids=decoder_turn_ids, decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,labels = decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids, comet_embs=comet_embs, comet_mask=comet_mask, comet_embs_st=comet_embs_st, comet_mask_st=comet_mask_st, emotion=emotion)
+                outputs = model(input_ids, attention_mask = input_ids.ne(tokenizer.pad_token_id), decoder_input_ids=decoder_input_ids, decoder_turn_ids=decoder_turn_ids, decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,labels = decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids, comet_embs=comet_embs, comet_mask=comet_mask, comet_embs_st=comet_embs_st, comet_mask_st=comet_mask_st, emotion=emotion, d=d)
                 # print("ok_4")
                 # print(outputs.lm_logits, outputs.emo_logits)
                 # print(outputs.loss, outputs.emo_loss, outputs.lm_loss)
