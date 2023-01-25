@@ -1229,11 +1229,13 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, eval_
             # print(strategy_logits.argmax(dim=-1))
             # print(emo_logits.shape)
             # print(emotion)
-            # for idx, emo_logit in enumerate(emo_logits):
-            #     if emo_logit.argmax() == emotion[idx]:
-            #         emo_hits.append(1)
-            #     else:
-            #         emo_hits.append(0)
+            for idx, emo_logit in enumerate(emo_logits):
+                print("bef: ", emo_logit.argmax())
+                print("aff: ", emotion[idx])
+                if emo_logit.argmax() == emotion[idx]:
+                    emo_hits.append(1)
+                else:
+                    emo_hits.append(0)
 
             # print(decoder_input_ids)
             # strategy_ids = decoder_input_ids[:, 0] - 54944
