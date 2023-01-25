@@ -1219,7 +1219,7 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, eval_
                                 decoder_role_ids=decoder_role_ids, turn_ids=turn_ids, role_ids=role_ids,
                                 labels=decoder_label_ids, decoder_strategy_ids=decoder_strategy_ids,
                                 comet_embs=comet_embs, comet_mask=comet_mask, comet_embs_st=comet_embs_st,
-                                comet_mask_st=comet_mask_st, emotion=emotion)
+                                comet_mask_st=comet_mask_st, emotion=emotion, d=d)
                 loss = outputs.loss
 
                 ppl = outputs.lm_loss
