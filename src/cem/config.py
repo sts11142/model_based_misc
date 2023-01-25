@@ -121,8 +121,8 @@ vader_loss = args.vader_loss
 init_emo_emb = args.init_emo_emb
 
 # device = torch.device("cuda" if args.cuda else "cpu")
-# device = torch.device("cpu")
 device = torch.device("cuda")
+# device = torch.device("cpu")
 
 pointer_gen = args.pointer_gen
 is_coverage = args.is_coverage

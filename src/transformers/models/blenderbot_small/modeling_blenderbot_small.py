@@ -1689,8 +1689,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         cs_masks = []
         cs_outputs = []
         for r in self.rels:
-            # device = torch.device("cpu")
             device = torch.device("cuda")
+            # device = torch.device("cpu")
             emb = self.emb_tokens(d[r]).to(device)
             # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
             mask = d[r].data.eq(1).eq(False)
@@ -1721,7 +1721,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
             cog_outputs.append(cog_concat_enc.last_hidden_state)
 
-        cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx], dim=-1)
+        cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx.last_hidden_state], dim=-1)
         cog_contrib = nn.Sigmoid()(cog_ref_ctx)
         cog_ref_ctx = cog_contrib * cog_ref_ctx
         cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
