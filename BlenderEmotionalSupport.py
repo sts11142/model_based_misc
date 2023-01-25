@@ -1364,7 +1364,7 @@ def main(args):
     # load preproc data
     with open("./dataset/"+"dataset_preproc.p", "rb") as f:
         [data_tra, data_val, data_tst, vocab] = pickle.load(f)
-        print("dataset_preproc sample: ",data_tra["emotion"], len(data_tra["emotion"]))
+        # print("dataset_preproc sample: ",data_tra["emotion"], len(data_tra["emotion"]))
 
     # comet_trn,st_comet_trn, df_trn = comet_trn[:5000 + 1], st_comet_trn[:5000 + 1], df_trn[:5000 + 1]
     # comet_val, st_comet_val, df_val = comet_val[:100 + 1], st_comet_val[:100 + 1], df_val[:100 + 1]
