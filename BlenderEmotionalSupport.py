@@ -1228,6 +1228,7 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, eval_
 
             # print(strategy_logits.argmax(dim=-1))
             print(emo_logits.shape)
+            print(emotion)
             for idx, emo_logit in enumerate(emo_logits):
                 if emo_logit.argmax() == emotion[idx]:
                     emo_hits.append(1)
