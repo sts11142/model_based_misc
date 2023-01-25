@@ -587,7 +587,7 @@ class ESDDataset(Dataset):
         for key in keys:
             item_info[key] = [getattr(d, key) for d in data]
         
-        print(item_info["context_text"][0])
+        # print(item_info["context_text"][0])
         # for key in data[0].keys():
         #     item_info[key] = [d[key] for d in data]
 
@@ -1164,7 +1164,7 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, eval_
 
     for batch in tqdm(eval_dataloader, desc="Evaluating",disable=True):
         model.train()
-        input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st = batch
+        input_ids, position_ids, turn_ids, role_ids, labels, cls_positions, cls_labels, strategy_ids, decoder_input_ids, decoder_position_ids, decoder_turn_ids, decoder_role_ids, decoder_labels, decoder_cls_positions, decoder_cls_labels, decoder_strategy_ids, comet_ids, comet_mask, emotion, comet_ids_st, comet_mask_st, d = batch
         if input_ids.shape[1] > 512: continue
 
         decoder_strategy_ids = decoder_strategy_ids[:, 0]
