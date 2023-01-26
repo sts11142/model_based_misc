@@ -1594,5 +1594,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
