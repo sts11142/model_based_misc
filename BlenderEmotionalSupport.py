@@ -80,7 +80,8 @@ class Args():
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
         # nowtime = '01211835'
-        nowtime = '01260023'
+        # nowtime = '01260023'
+        nowtime = '01261523'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
