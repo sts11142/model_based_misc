@@ -1414,7 +1414,8 @@ def generate(args):
     # ↓変更箇所
     # model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir,
     #     from_tf=False)
-    model = BlenderbotSmallForConditionalGeneration()
+    config = BlenderbotSmallConfig.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
+    model = BlenderbotSmallForConditionalGeneration(config)
     model.resize_token_embeddings(len(tokenizer))
     model.from_pretrained(args.output_dir, from_tf=False)
     # ↑変更箇所
