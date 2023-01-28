@@ -1342,12 +1342,12 @@ def main(args):
     tokenizer.add_special_tokens({'cls_token': '[CLS]'})
 
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
-    print(model.cem_emo_encoder.embed_tokens.weight)
-    print(model.cem_emo_ref_encoder.embed_tokens.weight)
+    print(model.cem_emo_encoder.embed_tokens.weight.shape)
+    print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
 
     model.resize_token_embeddings(len(tokenizer))
-    print(model.cem_emo_encoder.embed_tokens.weight)
-    print(model.cem_emo_ref_encoder.embed_tokens.weight)
+    print(model.cem_emo_encoder.embed_tokens.weight.shape)
+    print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     model.to(args.device)
 
     logger.info("Training/evaluation parameters %s", args)
