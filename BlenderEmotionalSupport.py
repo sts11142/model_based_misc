@@ -1070,6 +1070,11 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                         args.local_rank == -1 and args.evaluate_during_training
                     ):  # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(args, model, tokenizer, args.eval_dataset, "{}-{}".format("checkpoint", global_step))
+
+                        print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+                        print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+                        print("config.vocab_size: ", config.vocab_size)
+
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
                     tb_writer.add_scalar("lr", scheduler.get_last_lr()[0], global_step)
@@ -1613,5 +1618,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
