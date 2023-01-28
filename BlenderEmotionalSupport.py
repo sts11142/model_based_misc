@@ -1423,9 +1423,11 @@ def generate(args):
     model = BlenderbotSmallForConditionalGeneration(config)
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("config.vocab_size: ", config.vocab_size)
     model.resize_token_embeddings(len(tokenizer))
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("config.vocab_size: ", config.vocab_size)
     model.from_pretrained(args.output_dir, from_tf=False)
     # ↑変更箇所
 
