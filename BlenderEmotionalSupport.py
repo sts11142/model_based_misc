@@ -1421,7 +1421,11 @@ def generate(args):
     #     from_tf=False)
     config = BlenderbotSmallConfig.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
     model = BlenderbotSmallForConditionalGeneration(config)
+    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     model.resize_token_embeddings(len(tokenizer))
+    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     model.from_pretrained(args.output_dir, from_tf=False)
     # ↑変更箇所
 
@@ -1607,5 +1611,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
