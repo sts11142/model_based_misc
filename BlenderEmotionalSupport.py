@@ -81,7 +81,8 @@ class Args():
     #    nowtime = '10251756'
         # nowtime = '01211835'
         # nowtime = '01260023'
-        nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
+        # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
+        nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
@@ -1341,8 +1342,12 @@ def main(args):
     tokenizer.add_special_tokens({'cls_token': '[CLS]'})
 
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
+    print(model.cem_emo_encoder.embed_tokens.weight)
+    print(model.cem_emo_ref_encoder.embed_tokens.weight)
 
     model.resize_token_embeddings(len(tokenizer))
+    print(model.cem_emo_encoder.embed_tokens.weight)
+    print(model.cem_emo_ref_encoder.embed_tokens.weight)
     model.to(args.device)
 
     logger.info("Training/evaluation parameters %s", args)
@@ -1602,5 +1607,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
