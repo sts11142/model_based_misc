@@ -1561,8 +1561,9 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
 
         # cem_module
         # self.padding_idx, vocab_size = config.pad_token_id, config.vocab_size
-        get_input_tokens = self.get_input_embeddings()
-        self.emb_tokens = get_input_tokens
+        # get_input_tokens = self.get_input_embeddings()
+        # self.emb_tokens = get_input_tokens
+        self.emb_tokens = self.model.shared
         self.rels = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
         self.cem_encoder = self.get_encoder()
         self.cem_emo_encoder = self.get_encoder()
