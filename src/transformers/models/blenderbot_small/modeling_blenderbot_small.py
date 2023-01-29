@@ -970,6 +970,10 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
             #turn_embeds = self.wte(turn_ids)
         else:
             turn_embeds = 0
+
+        # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
+        inputs_embeds = self.embedding_proj(inputs_embeds)
+
         embed_pos = self.embed_positions(input_shape)
 
         hidden_states = inputs_embeds + embed_pos
@@ -977,7 +981,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         hidden_states = F.dropout(hidden_states, p=self.dropout, training=self.training)
 
         # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
-        hidden_states = self.embedding_proj(hidden_states)
+        # hidden_states = self.embedding_proj(hidden_states)
 
         attention_mask_for_muAttn = attention_mask.clone()
 
