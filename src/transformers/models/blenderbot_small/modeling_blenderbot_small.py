@@ -333,7 +333,7 @@ class BlenderbotSmallAttention(nn.Module):
 
 # Copied from transformers.models.bart.modeling_bart.BartEncoderLayer with Bart->BlenderbotSmall
 class BlenderbotSmallEncoderLayer(nn.Module):
-    def __init__(self, config: BlenderbotSmallConfig, twice=False):
+    def __init__(self, config: BlenderbotSmallConfig):
         super().__init__()
         self.embed_dim = config.d_model
         # if (twice == False):
@@ -1563,7 +1563,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # self.padding_idx, vocab_size = config.pad_token_id, config.vocab_size
         # get_input_tokens = self.get_input_embeddings()
         # self.emb_tokens = get_input_tokens
-        self.emb_tokens = self.model.shared
+        # self.emb_tokens = self.model.shared
         self.rels = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
         self.cem_encoder = self.get_encoder()
         self.cem_emo_encoder = self.get_encoder()
@@ -1694,7 +1694,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         for r in self.rels:
             device = torch.device("cuda")
             # device = torch.device("cpu")
-            emb = self.emb_tokens(d[r]).to(device)
+            # emb = self.emb_tokens(d[r]).to(device)
+            emb = self.model.shared(d[r]).to(device)
             # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
             mask = d[r].data.eq(1).eq(False)
             cs_embs.append(emb)

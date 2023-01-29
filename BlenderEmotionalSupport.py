@@ -1071,9 +1071,8 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                     ):  # Only evaluate when single GPU otherwise metrics may not average well
                         results = evaluate(args, model, tokenizer, args.eval_dataset, "{}-{}".format("checkpoint", global_step))
 
-                        print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
-                        print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-                        print("config.vocab_size: ", config.vocab_size)
+                        # print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+                        # print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
 
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
@@ -1349,10 +1348,12 @@ def main(args):
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
     print(model.cem_emo_encoder.embed_tokens.weight.shape)
     print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("config.vocab_size: ", config.vocab_size)
 
     model.resize_token_embeddings(len(tokenizer))
     print(model.cem_emo_encoder.embed_tokens.weight.shape)
     print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("config.vocab_size: ", config.vocab_size)
     model.to(args.device)
 
     logger.info("Training/evaluation parameters %s", args)
