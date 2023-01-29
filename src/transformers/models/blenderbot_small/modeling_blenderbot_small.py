@@ -844,17 +844,17 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         embed_tokens (torch.nn.Embedding): output embedding
     """
 
-    # def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None, twice=False):
-    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None):
+    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None, twice=False):
+    # def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None):
         super().__init__(config)
 
         self.dropout = config.dropout
         self.layerdrop = config.encoder_layerdrop
 
-        # if (twice == False):
-        #     embed_dim = config.d_model
-        # else:
-        #     embed_dim = config.d_model * 2
+        if (twice == False):
+            embed_dim = config.d_model
+        else:
+            embed_dim = config.d_model * 2
         embed_dim = config.d_model
         self.padding_idx = config.pad_token_id
         self.max_source_positions = config.max_position_embeddings
@@ -874,7 +874,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config) for _ in range(config.encoder_layers)])
         self.layernorm_embedding = nn.LayerNorm(embed_dim)
 
-        # self.embedding_proj = nn.Linear(embed_dim, config.d_model)
+        self.embedding_proj = nn.Linear(embed_dim, config.d_model)
 
         self.emotion_head = nn.Linear(config.d_model, 11)
         self.intensity_head = nn.Linear(config.d_model, 1) # 512次元 -> 1次元
@@ -977,7 +977,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         hidden_states = F.dropout(hidden_states, p=self.dropout, training=self.training)
 
         # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
-        # hidden_states = self.embedding_proj(hidden_states)
+        hidden_states = self.embedding_proj(hidden_states)
 
         attention_mask_for_muAttn = attention_mask.clone()
 
@@ -1634,8 +1634,11 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.encoder = BlenderbotSmallEncoder(config, self.shared)
         self.decoder = BlenderbotSmallDecoder(config, self.shared)
 
-        # self.encoder_2 = BlenderbotSmallEncoder(config, self.shared, twice=True)
-        self.encoder_2 = BlenderbotSmallEncoder2D(config, self.shared)
+        self.encoder_emo = BlenderbotSmallEncoder(config, self.shared)
+        self.encoder_cog = BlenderbotSmallEncoder(config, self.shared)
+        self.encoder_emo2d = BlenderbotSmallEncoder(config, self.shared, twice=True)
+        self.encoder_cog2d = BlenderbotSmallEncoder(config, self.shared, twice=True)
+        # self.encoder_2 = BlenderbotSmallEncoder2D(config, self.shared)
 
         self.init_weights()
 
@@ -1645,16 +1648,28 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
     def set_input_embeddings(self, value):
         self.shared = value
         self.encoder.embed_tokens = self.shared
+        self.encoder_emo.embed_tokens = self.shared
+        self.encoder_cog.embed_tokens = self.shared
+        self.encoder_emo2d.embed_tokens = self.shared
+        self.encoder_cog2d.embed_tokens = self.shared
         self.decoder.embed_tokens = self.shared
-        self.encoder_2.embed_tokens = self.shared
+        # self.encoder_2.embed_tokens = self.shared
 
     # def get_encoder(self, twice=False):
     #     if (twice):
     #         return self.encoder_2
     #     else:
     #         return self.encoder
-    def get_encoder(self):
-        return self.encoder
+    def get_encoder(self, type):
+        if (type == "emo"):
+            return self.encoder_emo
+        elif (type == "cog"):
+            return self.encoder_cog
+        elif (type == "emo_2d"):
+            return self.encoder_emo2d
+        elif (type == "cog_2d"):
+            return self.encoder_cog2d
+        # return self.encoder
     
     def get_encoder2D(self):
         return self.encoder_2
@@ -1833,10 +1848,12 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # self.emb_tokens = self.model.shared
         self.rels = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
         self.cem_encoder = self.get_encoder()
-        self.cem_emo_encoder = self.get_encoder()
-        self.cem_cog_encoder = self.get_encoder()
-        self.cem_emo_ref_encoder = self.get_encoder2D()
-        self.cem_cog_ref_encoder = self.get_encoder2D()
+        self.cem_emo_encoder = self.get_encoder("emo")
+        self.cem_cog_encoder = self.get_encoder("cog")
+        self.cem_emo_ref_encoder = self.get_encoder("emo_2d")
+        self.cem_cog_ref_encoder = self.get_encoder("cog_2d")
+        # self.cem_emo_ref_encoder = self.get_encoder2D()
+        # self.cem_cog_ref_encoder = self.get_encoder2D()
         self.cem_emo_lin = nn.Linear(config.d_model, 11, bias=False)
         self.cem_cog_lin = MLP(config)
         self.mixed_hidden_lin = nn.Linear(config.d_model * 2, config.d_model, bias=False)
@@ -1849,11 +1866,12 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
     #         return self.model.get_encoder(twice=twice)
     #     else:
     #         return self.model.get_encoder()
-    def get_encoder(self):
-        return self.model.get_encoder()
-    
-    def get_encoder2D(self):
-        return self.model.get_encoder2D()
+    # def get_encoder(self):
+    #     return self.model.get_encoder() 
+    # def get_encoder2D(self):
+    #     return self.model.get_encoder2D()
+    def get_encoder(self, type):
+        return self.model.get_encoder(type)
 
     def get_decoder(self):
         return self.model.get_decoder()

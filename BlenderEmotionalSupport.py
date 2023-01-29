@@ -82,7 +82,8 @@ class Args():
         # nowtime = '01211835'
         # nowtime = '01260023'
         # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
-        nowtime = 'debug'
+        nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
+        # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
@@ -1346,8 +1347,10 @@ def main(args):
     tokenizer.add_special_tokens({'cls_token': '[CLS]'})
 
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
-    print(model.cem_emo_encoder.embed_tokens.weight.shape)
-    print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
+    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
 
@@ -1430,12 +1433,16 @@ def generate(args):
     config = BlenderbotSmallConfig.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
     model = BlenderbotSmallForConditionalGeneration(config)
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
     model.resize_token_embeddings(len(tokenizer))
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
     print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
     model.from_pretrained(args.output_dir, from_tf=False)
