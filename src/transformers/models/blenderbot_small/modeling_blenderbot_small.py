@@ -1646,6 +1646,7 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.shared = value
         self.encoder.embed_tokens = self.shared
         self.decoder.embed_tokens = self.shared
+        self.encoder_2.embed_tokens = self.shared
 
     # def get_encoder(self, twice=False):
     #     if (twice):
