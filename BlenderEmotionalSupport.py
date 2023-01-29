@@ -1428,24 +1428,24 @@ def generate(args):
     # print(tokenizer.encode(['others]']))
     # print(1 / 0)
     # ↓変更箇所
-    # model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir,
-    #     from_tf=False)
-    config = BlenderbotSmallConfig.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
-    model = BlenderbotSmallForConditionalGeneration(config)
-    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
-    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
-    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight.shape)
-    print("config.vocab_size: ", config.vocab_size)
-    model.resize_token_embeddings(len(tokenizer))
-    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
-    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
-    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight.shape)
-    print("config.vocab_size: ", config.vocab_size)
-    model.from_pretrained(args.output_dir, from_tf=False)
+    model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir,
+        from_tf=False)
+    # config = BlenderbotSmallConfig.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
+    # model = BlenderbotSmallForConditionalGeneration(config)
+    # print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
+    # print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("emb: ", model.model.shared.weight.shape)
+    # print("config.vocab_size: ", config.vocab_size)
+    # model.resize_token_embeddings(len(tokenizer))
+    # print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
+    # print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("emb: ", model.model.shared.weight.shape)
+    # print("config.vocab_size: ", config.vocab_size)
+    # model.from_pretrained(args.output_dir, from_tf=False)
     # ↑変更箇所
 
     C = model.model.encoder.strategy_embedding.weight[:8,:]
@@ -1630,5 +1630,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
