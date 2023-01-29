@@ -972,7 +972,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
             turn_embeds = 0
 
         # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
-        inputs_embeds = self.embedding_proj(inputs_embeds)
+        # inputs_embeds = self.embedding_proj(inputs_embeds)
 
         embed_pos = self.embed_positions(input_shape)
 
@@ -1640,8 +1640,8 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
 
         self.encoder_emo = BlenderbotSmallEncoder(config, self.shared)
         self.encoder_cog = BlenderbotSmallEncoder(config, self.shared)
-        self.encoder_emo2d = BlenderbotSmallEncoder(config, self.shared, twice=True)
-        self.encoder_cog2d = BlenderbotSmallEncoder(config, self.shared, twice=True)
+        self.encoder_emo2d = BlenderbotSmallEncoder(config, self.shared, twice=False)
+        self.encoder_cog2d = BlenderbotSmallEncoder(config, self.shared, twice=False)
         # self.encoder_2 = BlenderbotSmallEncoder2D(config, self.shared)
 
         self.init_weights()
@@ -1859,6 +1859,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         self.cem_cog_ref_encoder = self.get_encoder("cog_2d")
         # self.cem_emo_ref_encoder = self.get_encoder2D()
         # self.cem_cog_ref_encoder = self.get_encoder2D()
+        self.embedding_proj = nn.Linear(config.d_model*2, config.d_model, bias=False)
         self.cem_emo_lin = nn.Linear(config.d_model, 11, bias=False)
         self.cem_cog_lin = MLP(config)
         self.mixed_hidden_lin = nn.Linear(config.d_model * 2, config.d_model, bias=False)
@@ -2010,6 +2011,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         dim = [-1, enc_outputs.shape[1], -1]
         # Emotion
         emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
+        emo_concat = self.embedding_proj(emo_concat)
         emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
         emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
 
@@ -2017,6 +2019,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         cog_outputs = []
         for cls in cog_cls:
             cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
+            cog_concat = self.embedding_proj(cog_concat)
             cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
             cog_outputs.append(cog_concat_enc.last_hidden_state)
 
