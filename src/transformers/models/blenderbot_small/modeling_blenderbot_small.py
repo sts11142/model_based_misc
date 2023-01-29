@@ -869,7 +869,7 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
             self.padding_idx,
         )
 
-        self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config, twice=twice) for _ in range(config.encoder_layers)])
+        self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config) for _ in range(config.encoder_layers)])
         self.layernorm_embedding = nn.LayerNorm(embed_dim)
 
         self.embedding_proj = nn.Linear(embed_dim, config.d_model)
