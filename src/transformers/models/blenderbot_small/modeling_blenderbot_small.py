@@ -1669,7 +1669,8 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
             return self.encoder_emo2d
         elif (type == "cog_2d"):
             return self.encoder_cog2d
-        # return self.encoder
+        else:
+            return self.encoder
     
     def get_encoder2D(self):
         return self.encoder_2
@@ -1847,7 +1848,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # self.emb_tokens = get_input_tokens
         # self.emb_tokens = self.model.shared
         self.rels = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
-        self.cem_encoder = self.get_encoder()
+        self.cem_encoder = self.get_encoder("normal")
         self.cem_emo_encoder = self.get_encoder("emo")
         self.cem_cog_encoder = self.get_encoder("cog")
         self.cem_emo_ref_encoder = self.get_encoder("emo_2d")
