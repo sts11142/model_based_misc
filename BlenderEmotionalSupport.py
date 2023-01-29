@@ -81,8 +81,8 @@ class Args():
     #    nowtime = '10251756'
         # nowtime = '01211835'
         # nowtime = '01260023'
-        # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
-        nowtime = 'debug'
+        nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
+        # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
@@ -1431,10 +1431,12 @@ def generate(args):
     model = BlenderbotSmallForConditionalGeneration(config)
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
     model.resize_token_embeddings(len(tokenizer))
     print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
     print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
     model.from_pretrained(args.output_dir, from_tf=False)
     # ↑変更箇所
@@ -1621,5 +1623,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
