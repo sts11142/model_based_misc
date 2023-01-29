@@ -1656,7 +1656,7 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         return self.encoder
     
     def get_encoder2D(self):
-        return self.encoder2D
+        return self.encoder_2
 
     def get_decoder(self):
         return self.decoder
