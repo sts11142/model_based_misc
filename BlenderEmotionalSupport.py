@@ -1348,13 +1348,13 @@ def main(args):
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
     print(model.cem_emo_encoder.embed_tokens.weight.shape)
     print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight)
+    print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
 
     model.resize_token_embeddings(len(tokenizer))
     print(model.cem_emo_encoder.embed_tokens.weight.shape)
     print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight)
+    print("emb: ", model.model.shared.weight.shape)
     print("config.vocab_size: ", config.vocab_size)
     model.to(args.device)
 
