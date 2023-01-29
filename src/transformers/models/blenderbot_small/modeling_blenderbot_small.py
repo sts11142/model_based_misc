@@ -1843,11 +1843,16 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         self.dropout = config.dropout
         self.init_weights()
 
-    def get_encoder(self, twice=False):
-        if (twice):
-            return self.model.get_encoder(twice=twice)
-        else:
-            return self.model.get_encoder()
+    # def get_encoder(self, twice=False):
+    #     if (twice):
+    #         return self.model.get_encoder(twice=twice)
+    #     else:
+    #         return self.model.get_encoder()
+    def get_encoder(self):
+        return self.model.get_encoder()
+    
+    def get_encoder2D(self):
+        return self.model.get_encoder2D()
 
     def get_decoder(self):
         return self.model.get_decoder()
