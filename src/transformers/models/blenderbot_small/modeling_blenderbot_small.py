@@ -844,16 +844,276 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         embed_tokens (torch.nn.Embedding): output embedding
     """
 
-    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None, twice=False):
+    # def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None, twice=False):
+    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None):
         super().__init__(config)
 
         self.dropout = config.dropout
         self.layerdrop = config.encoder_layerdrop
 
-        if (twice == False):
-            embed_dim = config.d_model
+        # if (twice == False):
+        #     embed_dim = config.d_model
+        # else:
+        #     embed_dim = config.d_model * 2
+        embed_dim = config.d_model
+        self.padding_idx = config.pad_token_id
+        self.max_source_positions = config.max_position_embeddings
+        self.embed_scale = math.sqrt(embed_dim) if config.scale_embedding else 1.0
+
+        if embed_tokens is not None:
+            self.embed_tokens = embed_tokens
         else:
-            embed_dim = config.d_model * 2
+            self.embed_tokens = nn.Embedding(config.vocab_size, embed_dim, self.padding_idx)
+
+        self.embed_positions = BlenderbotSmallLearnedPositionalEmbedding(
+            config.max_position_embeddings,
+            embed_dim,
+            self.padding_idx,
+        )
+
+        self.layers = nn.ModuleList([BlenderbotSmallEncoderLayer(config) for _ in range(config.encoder_layers)])
+        self.layernorm_embedding = nn.LayerNorm(embed_dim)
+
+        # self.embedding_proj = nn.Linear(embed_dim, config.d_model)
+
+        self.emotion_head = nn.Linear(config.d_model, 11)
+        self.intensity_head = nn.Linear(config.d_model, 1) # 512次元 -> 1次元
+        self.strategy_head = nn.Linear(config.d_model, 8) # 512次元 -> 8次元
+        self.batchNorm_emotion = nn.BatchNorm1d(11)
+        self.batchNorm_strategy = nn.BatchNorm1d(8)
+
+        self.strategy_embedding = nn.Embedding(8 + 1, embed_dim, 8)
+        self.strategy_id = torch.tensor(range(8), dtype=torch.long) # [0, 1, 2, ..., 7]
+        self.multi_state_LayerNorm = nn.LayerNorm(config.d_model)
+
+        self.init_weights()
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        inputs_embeds=None,
+        comet_embs=None,
+        comet_mask=None,
+        comet_embs_st=None,
+        comet_mask_st=None,
+        role_ids=None,
+        turn_ids=None,
+        cls_position=None,
+        next_strategy_id=None,
+        output_attentions=None,
+        output_mutual_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
+        strategy_logit_ground=None,
+        d=None,
+    ):
+
+        r"""
+        Args:
+            input_ids (:obj:`torch.LongTensor` of shape :obj:`(batch_size, sequence_length)`):
+                Indices of input sequence tokens in the vocabulary. Padding will be ignored by default should you
+                provide it.
+
+                Indices can be obtained using :class:`~transformers.BlenderbotSmallTokenizer`. See
+                :meth:`transformers.PreTrainedTokenizer.encode` and :meth:`transformers.PreTrainedTokenizer.__call__`
+                for details.
+
+                `What are input IDs? <../glossary.html#input-ids>`__
+            attention_mask (:obj:`torch.Tensor` of shape :obj:`(batch_size, sequence_length)`, `optional`):
+                Mask to avoid performing attention on padding token indices. Mask values selected in ``[0, 1]``:
+
+                - 1 for tokens that are **not masked**,
+                - 0 for tokens that are **masked**.
+
+                `What are attention masks? <../glossary.html#attention-mask>`__
+            inputs_embeds (:obj:`torch.FloatTensor` of shape :obj:`(batch_size, sequence_length, hidden_size)`, `optional`):
+                Optionally, instead of passing :obj:`input_ids` you can choose to directly pass an embedded
+                representation. This is useful if you want more control over how to convert :obj:`input_ids` indices
+                into associated vectors than the model's internal embedding lookup matrix.
+            output_attentions (:obj:`bool`, `optional`):
+                Whether or not to return the attentions tensors of all attention layers. See ``attentions`` under
+                returned tensors for more detail.
+            output_hidden_states (:obj:`bool`, `optional`):
+                Whether or not to return the hidden states of all layers. See ``hidden_states`` under returned tensors
+                for more detail.
+            return_dict (:obj:`bool`, `optional`):
+                Whether or not to return a :class:`~transformers.file_utils.ModelOutput` instead of a plain tuple.
+        """
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+
+        # retrieve input_ids and inputs_embeds
+        if input_ids is not None and inputs_embeds is not None:
+            raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
+        elif input_ids is not None:
+            input_shape = input_ids.size() # input_idsの行列の形を取得
+            input_ids = input_ids.view(-1, input_shape[-1]) # -1: 数は自動で決定（コピー元の配列の要素数に合うように） input_shape[-1]: 列数？
+        elif inputs_embeds is not None:
+            input_shape = inputs_embeds.size()[:-1]
+        else:
+            raise ValueError("You have to specify either input_ids or inputs_embeds")
+
+        if inputs_embeds is None:
+            inputs_embeds = self.embed_tokens(input_ids) * self.embed_scale
+        if role_ids is not None:
+            role_embeds = 0
+            #role_embeds = self.wre(role_ids)
+        else:
+            role_embeds = 0
+        if turn_ids is not None:
+            turn_embeds = 0
+            #turn_embeds = self.wte(turn_ids)
+        else:
+            turn_embeds = 0
+        embed_pos = self.embed_positions(input_shape)
+
+        hidden_states = inputs_embeds + embed_pos
+        hidden_states = self.layernorm_embedding(hidden_states)
+        hidden_states = F.dropout(hidden_states, p=self.dropout, training=self.training)
+
+        # cem...model.py...L108 に合わせて，refine_context用に次元のプロジェクションを行うようにする
+        # hidden_states = self.embedding_proj(hidden_states)
+
+        attention_mask_for_muAttn = attention_mask.clone()
+
+        # expand attention_mask
+        if attention_mask is not None:
+            # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
+            attention_mask = _expand_mask(attention_mask, inputs_embeds.dtype)
+
+        comet_hidden_states = comet_embs
+
+        comet_hidden_states_st = comet_embs_st
+
+        encoder_states = () if output_hidden_states else None
+        all_attentions = () if output_attentions else None
+        all_mutual_attentions = () if output_mutual_attentions else None
+        all_mutual_attentions_st = () if output_mutual_attentions else None
+
+        for encoder_layer in self.layers:
+            if output_hidden_states:
+                encoder_states = encoder_states + (hidden_states,)
+            # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
+            dropout_probability = random.uniform(0, 1)
+            if self.training and (dropout_probability < self.layerdrop):  # skip the layer
+                layer_outputs = (None, None)
+            else:
+                if getattr(self.config, "gradient_checkpointing", False):
+
+                    def create_custom_forward(module):
+                        def custom_forward(*inputs):
+                            return module(*inputs, output_attentions)
+
+                        return custom_forward
+
+                    layer_outputs = torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(encoder_layer),
+                        hidden_states,
+                        attention_mask,
+                        comet_embs,
+                    )
+                else:
+                    layer_outputs = encoder_layer(hidden_states, attention_mask, comet_hidden_states=comet_hidden_states, attention_mask_for_muAttn=attention_mask_for_muAttn, comet_mask=comet_mask, comet_hidden_states_st=comet_hidden_states_st, comet_mask_st=comet_mask_st, output_mutual_attentions=output_mutual_attentions)
+
+                hidden_states = layer_outputs['hidden_states']
+                comet_hidden_states = layer_outputs['comet_hidden_states']
+                comet_hidden_states_st = layer_outputs['comet_hidden_states_st']
+
+            if output_attentions:
+                all_attentions = all_attentions + (layer_outputs['attn_weights'],)
+            if output_mutual_attentions:
+                all_mutual_attentions = all_mutual_attentions + (layer_outputs['mutual_attn_weights'],)
+                all_mutual_attentions_st = all_mutual_attentions_st + (layer_outputs['mutual_attn_weights_st'],)
+
+        if output_hidden_states:
+            encoder_states = encoder_states + (hidden_states,)
+        multi_state = None
+        if comet_embs is not None and comet_embs_st is not None:
+            multi_state = self.multi_state_LayerNorm(torch.mean(hidden_states, dim=1) + torch.mean(comet_hidden_states, dim=1) + torch.mean(comet_hidden_states_st, dim=1)) if comet_embs is not None else None
+        #     multi_state = torch.mean([torch.mean(hidden_states, dim=1), torch.mean(comet_hidden_states, dim=1), torch.mean(comet_hidden_states_st, dim=1)], dim=1)
+            emotion_logits = self.emotion_head(hidden_states[:,0,:])
+            emotion_intensity = self.intensity_head(hidden_states[:,0,:])
+            strategy_logits = self.strategy_head(hidden_states[:, 0, :]) # paperのC_1に対応する
+            # strategy_logits = self.strategy_head(hidden_states[:,0,:]) + 1 / turn_ids.unsqueeze(1).type(torch.float)
+        #     emotion_logits = self.emotion_head(F.relu(torch.mean(comet_hidden_states_st, dim=1)))
+        #     emotion_intensity = self.intensity_head(F.relu(torch.mean(comet_hidden_states, dim=1)))
+        #     # strategy_logits = F.softmax(self.strategy_head(hidden_states[:, -1]), dim=-1)
+        #     emotion_logits = self.emotion_head(torch.mean(comet_hidden_states_st, dim=1))
+        #     emotion_intensity = self.intensity_head(torch.mean(comet_hidden_states, dim=1))
+        #     strategy_logits = self.strategy_head(torch.mean(hidden_states, dim=1))
+        else:
+            multi_state = None
+            emotion_logits = None
+            emotion_intensity = None
+            strategy_logits = None
+
+        if strategy_logits is not None:
+            batch_size = strategy_logits.shape[0]
+            # strategy_logits = F.softmax(strategy_logits, dim=-1)
+            strategy_id = self.strategy_id.to(strategy_logits.device)
+
+            strategy_logits = self.batchNorm_strategy(strategy_logits)
+
+            ##这个softmax之前没加
+            # strategy_embs = torch.bmm(F.softmax(strategy_logits, dim=-1).unsqueeze(1), self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+            # strategy_embs=torch.einsum('ai,aij->aij', F.softmax(strategy_logits, dim=-1), self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+
+            # strategy_embs = torch.bmm(F.softmax(strategy_logits*1e6, dim=-1).unsqueeze(1), self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+            # strategy_embs = torch.bmm(F.softmax(strategy_logits*5, dim=-1).unsqueeze(1), self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+            # print(strategy_logits)
+            # emotion_logits = self.batchNorm_emotion(emotion_logits)
+
+            if strategy_logit_ground is not None:
+                # strategy_logits = strategy_logit_ground
+                # print(strategy_logits)
+                # print(1/0)
+                strategy_embs = torch.bmm(strategy_logit_ground.unsqueeze(1),self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+            else:
+                strategy_logits = self.batchNorm_strategy(strategy_logits)
+                strategy_embs = torch.bmm(F.softmax(strategy_logits, dim=-1).unsqueeze(1),
+                                          self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+                # strategy_embs = torch.bmm(F.softmax(strategy_logits * 1e2, dim=-1).unsqueeze(1),
+                #                           self.strategy_embedding(strategy_id).unsqueeze(0).repeat(batch_size, 1, 1))
+            # print(strategy_logits)
+            # print(1/0)
+            # strategy_logits = F.softmax(strategy_logits, dim=0)
+            # strategy_logits = F.softmax(strategy_logits, dim=1)
+
+        else:
+            strategy_embs=None
+        
+        # print(strategy_embs)
+
+        return BaseModelOutput(
+            last_hidden_state=hidden_states, last_comet_hidden_state = comet_hidden_states, last_comet_hidden_state_st=comet_hidden_states_st,
+            hidden_states=encoder_states, attentions=all_attentions, all_mutual_attentions=all_mutual_attentions, all_mutual_attentions_st=all_mutual_attentions_st,
+            emotion_logits = emotion_logits, emotion_intensity = emotion_intensity, strategy_logits = strategy_logits, strategy_embs = strategy_embs, comet_mask = comet_mask,
+            comet_mask_st=comet_mask_st
+        )
+
+
+class BlenderbotSmallEncoder2D(BlenderbotSmallPreTrainedModel):
+    """
+    Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
+    :class:`BlenderbotSmallEncoderLayer`.
+
+    Args:
+        config: BlenderbotSmallConfig
+        embed_tokens (torch.nn.Embedding): output embedding
+    """
+
+    def __init__(self, config: BlenderbotSmallConfig, embed_tokens: Optional[nn.Embedding] = None):
+        super().__init__(config)
+
+        self.dropout = config.dropout
+        self.layerdrop = config.encoder_layerdrop
+
+        embed_dim = config.d_model * 2
         self.padding_idx = config.pad_token_id
         self.max_source_positions = config.max_position_embeddings
         self.embed_scale = math.sqrt(embed_dim) if config.scale_embedding else 1.0
@@ -1374,7 +1634,8 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.encoder = BlenderbotSmallEncoder(config, self.shared)
         self.decoder = BlenderbotSmallDecoder(config, self.shared)
 
-        self.encoder_2 = BlenderbotSmallEncoder(config, self.shared, twice=True)
+        # self.encoder_2 = BlenderbotSmallEncoder(config, self.shared, twice=True)
+        self.encoder_2 = BlenderbotSmallEncoder2D(config, self.shared)
 
         self.init_weights()
 
@@ -1386,11 +1647,16 @@ class BlenderbotSmallModel(BlenderbotSmallPreTrainedModel):
         self.encoder.embed_tokens = self.shared
         self.decoder.embed_tokens = self.shared
 
-    def get_encoder(self, twice=False):
-        if (twice):
-            return self.encoder_2
-        else:
-            return self.encoder
+    # def get_encoder(self, twice=False):
+    #     if (twice):
+    #         return self.encoder_2
+    #     else:
+    #         return self.encoder
+    def get_encoder(self):
+        return self.encoder
+    
+    def get_encoder2D(self):
+        return self.encoder2D
 
     def get_decoder(self):
         return self.decoder
@@ -1568,8 +1834,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         self.cem_encoder = self.get_encoder()
         self.cem_emo_encoder = self.get_encoder()
         self.cem_cog_encoder = self.get_encoder()
-        self.cem_emo_ref_encoder = self.get_encoder(twice=True)
-        self.cem_cog_ref_encoder = self.get_encoder(twice=True)
+        self.cem_emo_ref_encoder = self.get_encoder2D()
+        self.cem_cog_ref_encoder = self.get_encoder2D()
         self.cem_emo_lin = nn.Linear(config.d_model, 11, bias=False)
         self.cem_cog_lin = MLP(config)
         self.mixed_hidden_lin = nn.Linear(config.d_model * 2, config.d_model, bias=False)
