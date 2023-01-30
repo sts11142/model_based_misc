@@ -1665,7 +1665,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             emo_loss_fct = CrossEntropyLoss()
             # print(emotion_logits.shape, emotion)
             emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
-            loss += emo_loss
+            # loss += emo_loss
 
         intensity_label = None
         if decoder_turn_ids is not None:

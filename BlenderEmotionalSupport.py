@@ -66,7 +66,8 @@ class Args():
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
         # nowtime = '01211638'
-        nowtime = '01300903'  # normal_misc, batch16, turn on emo_loss
+        # nowtime = '01300903'  # normal_misc, batch16, turn on emo_loss
+        nowtime = '01301154'  # normal_misc, batch16, turn off emo_loss
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
