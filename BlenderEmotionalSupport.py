@@ -65,9 +65,10 @@ class Args():
         # TAG = 'ablation_situation'
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
-        nowtime = '01211638'
-        self.output_dir = os.path.join('blender_strategy', TAG)
-        # self.output_dir = os.path.join('blender_strategy', nowtime)
+        # nowtime = '01211638'
+        nowtime = '01300903'  # normal_misc, batch16, turn on emo_loss
+        # self.output_dir = os.path.join('blender_strategy', TAG)
+        self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
         # self.generation_dir = os.path.join('generated_data', TAG)
         self.generation_dir = os.path.join('generated_data', nowtime)
@@ -95,7 +96,8 @@ class Args():
         self.generation = False
         self.generate_and_eval = False
         self.evaluate_during_training = True
-        self.per_gpu_train_batch_size = 20
+        # self.per_gpu_train_batch_size = 20
+        self.per_gpu_train_batch_size = 16
         self.per_gpu_eval_batch_size = 50
         self.gradient_accumulation_steps = 1
         self.learning_rate = 2e-5 #RAW 2
@@ -109,8 +111,8 @@ class Args():
         self.save_steps = 30
         self.save_total_limit = None
         self.eval_all_checkpoints = False
-        # self.no_cuda = False
-        self.no_cuda = True
+        self.no_cuda = False
+        # self.no_cuda = True
         self.overwrite_output_dir = True
         self.overwrite_cache = False
         self.should_continue = False
@@ -1374,5 +1376,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
