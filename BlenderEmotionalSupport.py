@@ -83,6 +83,7 @@ class Args():
         # nowtime = '01260023'
         # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
         nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime = '01301439'  # emo_logits_cemではなくemotion_logitsを使用する
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
@@ -1630,5 +1631,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
