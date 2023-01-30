@@ -59,7 +59,7 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 # Args to allow for easy convertion of python script to notebook
 class Args():
     def __init__(self):
-        TAG = 'all_loss'
+        # TAG = 'all_loss'
         # TAG = 'emotion'
         # TAG = 'ablation_strategy'
         # TAG = 'ablation_situation'
