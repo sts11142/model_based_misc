@@ -517,7 +517,7 @@ class ESDDataset(Dataset):
 
             feature.context, feature.context_mask = self.preprocess(feature.context_text)
             feature.target = self.preprocess(feature.target_text, anw=True)
-            feature.emotion, feature.emotion_label = self.preprocess_emo(
+            feature.emotion_, feature.emotion_label = self.preprocess_emo(
                 feature.emotion_text, self.emo_map
             )
             (
@@ -570,7 +570,7 @@ class ESDDataset(Dataset):
             "context",
             "context_mask",
             "target",
-            "emotion",
+            "emotion_",
             "emotion_label",
             "emotion_context_mask",
             "cs_text",
@@ -617,7 +617,7 @@ class ESDDataset(Dataset):
         d["emotion_context_batch"] = emotion_batch.to(config.device)
 
         ##program
-        d["target_program"] = item_info["emotion"]
+        d["target_program"] = item_info["emotion_"]
         d["program_label"] = item_info["emotion_label"]
 
         ##text
