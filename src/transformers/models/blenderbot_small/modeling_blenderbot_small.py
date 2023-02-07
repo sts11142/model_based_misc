@@ -2032,6 +2032,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
         else:
             cog_ref_ctx = None
+            emo_logits_cem = None
         # mixed_hidden_states = torch.cat([cog_ref_ctx, encoder_outputs.last_hidden_state], dim=-1)
         # mixed_hidden_states = self.mixed_hidden_lin(mixed_hidden_states)
 
@@ -2100,6 +2101,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             loss = masked_lm_loss.clone()
 
         if emotion is not None:
+            ## loss関数で切り替えの時に変更するのは2箇所
             emo_loss_fct = CrossEntropyLoss()
             # print(emotion_logits.shape, emotion)
             # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
@@ -2109,6 +2111,11 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             # emo_loss = nn.CrossEntropyLoss()(emo_logits_cem, emo_label).to(device)
             # emo_loss = nn.CrossEntropyLoss()(emotion_logits, emo_label).to(device)
             # loss += emo_loss
+
+            # ここも変えよう
+            emotion_logits = emotion_logits
+            # if emo_logits_cem is not None:
+                # emotion_logits = emo_logits_cem
 
         intensity_label = None
         if decoder_turn_ids is not None:
@@ -2131,8 +2138,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             intensity_loss=intensity_loss,
             strategy_loss=strategy_loss,
             lm_logits=lm_logits,
-            # emo_logits=emotion_logits,
-            emo_logits=emo_logits_cem,
+            emo_logits=emotion_logits,
+            # emo_logits=emo_logits_cem,
             strategy_logits=strategy_logits,
             past_key_values=decoder_outputs.past_key_values,
             decoder_hidden_states=decoder_outputs.hidden_states,
