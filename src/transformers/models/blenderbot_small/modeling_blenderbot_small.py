@@ -1986,7 +1986,6 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
         # src_mask = enc_batch.data.eq(1).eq(False)
         if d is not None:
-            print("no d")
             enc_outputs = encoder_outputs.last_hidden_state
             cs_embs = []
             cs_masks = []
@@ -2032,6 +2031,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             cog_ref_ctx = cog_contrib * cog_ref_ctx
             cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
         else:
+            print("no d")
             cog_ref_ctx = None
             emo_logits_cem = None
         # mixed_hidden_states = torch.cat([cog_ref_ctx, encoder_outputs.last_hidden_state], dim=-1)
