@@ -1979,9 +1979,9 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
 
         # cem_module
         # Commonsense relations
-        enc_batch = d["input_batch"]
+        # enc_batch = d["input_batch"]
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
-        src_mask = enc_batch.data.eq(1).eq(False)
+        # src_mask = enc_batch.data.eq(1).eq(False)
 
         enc_outputs = encoder_outputs.last_hidden_state
         cs_embs = []

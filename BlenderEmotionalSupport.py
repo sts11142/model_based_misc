@@ -82,8 +82,8 @@ class Args():
         # nowtime = '01211835'
         # nowtime = '01260023'
         # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
-        # nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
-        nowtime = '01301439'  # normal, emo_logits_cemではなくemotion_logitsを使用する
+        nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
+        # nowtime = '01301439'  # normal, emo_logits_cemではなくemotion_logitsを使用する
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
@@ -102,7 +102,7 @@ class Args():
         self.test_file_name = "testWithStrategy_short.tsv"
         self.train_comet_file = "trainComet.txt"
         self.eval_comet_file = "devComet.txt"
-        self.test_comet_file = "testComet.txt"
+        self.test_comet_file = "testcomet.txt"
         self.situation_train_comet_file = "trainComet_st.txt"
         self.situation_eval_comet_file = "devComet_st.txt"
         self.situation_test_comet_file = "testComet_st.txt"
@@ -1479,6 +1479,40 @@ def generate(args):
     with open(args.data_path+"/"+ args.test_comet_file, "r", encoding="utf-8") as f:
         comet = f.read().split("\n")
 
+    with open("./dataset/"+"dataset_preproc.p", "rb") as f:
+        [_, _, data_tst, vocab] = pickle.load(f)
+    
+    def merge(sequences):
+        lengths = [len(seq) for seq in sequences]
+        padded_seqs = torch.ones(
+            len(sequences), max(lengths)
+        ).long()  ## padding index 1
+        for i, seq in enumerate(sequences):
+            end = lengths[i]
+            padded_seqs[i, :end] = seq[:end]
+        return padded_seqs, lengths
+
+    my_dicts = []
+    
+    for cs_row in data_tst["utt_cs"]:
+        my_dict = {}
+        my_dict["cs_text"] = cs_row
+
+        my_dict["x_intent_txt"] = my_dict["cs_text"][0]
+        my_dict["x_need_txt"] = my_dict["cs_text"][1]
+        my_dict["x_want_txt"] = my_dict["cs_text"][2]
+        my_dict["x_effect_txt"] = my_dict["cs_text"][3]
+        my_dict["x_react_txt"] = my_dict["cs_text"][4]
+
+        my_dict["x_intent"] = preprocess(my_dict["x_intent_txt"], vocab, cs=True)
+        my_dict["x_need"] = preprocess(my_dict["x_need_txt"], vocab, cs=True)
+        my_dict["x_want"] = preprocess(my_dict["x_want_txt"], vocab, cs=True)
+        my_dict["x_effect"] = preprocess(my_dict["x_effect_txt"], vocab, cs=True)
+        my_dict["x_react"] = preprocess(my_dict["x_react_txt"], vocab, cs="react")
+
+        my_dicts.append(my_dict)
+
+
     assert len(comet) == len(chat_texts) == len(comet_st)
     gts = []
     refs = []
@@ -1490,7 +1524,7 @@ def generate(args):
     strategy_hits = []
     strategy_record = []
     strategy_hits_topk = [[] for _ in range(8)]
-    for idx, (c_text, comet_row, comet_st_row) in tqdm(enumerate(zip(chat_texts[:-1], comet[:-1], comet_st[:-1])), desc="Testing"):
+    for idx, (c_text, comet_row, comet_st_row, cs_row, my_di) in tqdm(enumerate(zip(chat_texts[:-1], comet[:-1], comet_st[:-1], data_tst["utt_cs"][:-1], my_dicts[:-1])), desc="Testing"):
         if "EOS" not in c_text:     # "EOS"が含まれていなければスキップ
             continue
         # if idx>=100:
@@ -1513,6 +1547,13 @@ def generate(args):
         decoder_strategy_ids = decoder_strategy_ids[:, 0]
         # print(decoder_strategy_ids)
         # print(1/0)
+
+        d = {}
+        relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
+        for r in relations:
+            pad_batch, _ = merge(my_di[r])
+            d[r] = pad_batch
+            d[f"{r}_txt"] = my_di[f"{r}_txt"]
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
 
@@ -1545,6 +1586,7 @@ def generate(args):
         paras["comet_embs_st"] = comet_embs_st
         paras["comet_mask_st"] = comet_mask_st
         paras["output_mutual_attentions"] = True
+        paras["d"] = d
 
         # batch_size = decoder_strategy_ids.shape[0]
         # onehot = torch.zeros(batch_size, 8).to(decoder_strategy_ids.device)
@@ -1630,7 +1672,64 @@ def generate(args):
         json.dump(result, f, indent=2, ensure_ascii=False)
     print("=" * 100)
 
+def preprocess(self, arr, vocab, anw=False, cs=None, emo=False):
+    """Converts words to ids."""
+    if anw:
+        sequence = [
+            vocab.word2index[word]
+            if word in vocab.word2index
+            else 0
+            for word in arr
+        ] + [2]
+
+        return torch.LongTensor(sequence)
+    elif cs:
+        sequence = [6] if cs != "react" else []
+        for sent in arr:
+            sequence += [
+                vocab.word2index[word]
+                for word in sent
+                if word in vocab.word2index and word not in ["to", "none"]
+            ]
+
+        return torch.LongTensor(sequence)
+    elif emo:
+        x_emo = [6]
+        x_emo_mask = [6]
+        for i, ew in enumerate(arr):
+            x_emo += [
+                vocab.word2index[ew]
+                if ew in vocab.word2index
+                else 0
+            ]
+            x_emo_mask += [vocab.word2index["CLS"]]
+
+        assert len(x_emo) == len(x_emo_mask)
+        return torch.LongTensor(x_emo), torch.LongTensor(x_emo_mask)
+
+    else:
+        x_dial = [6]
+        x_mask = [6]
+        for i, sentence in enumerate(arr):
+            x_dial += [
+                vocab.word2index[word]
+                if word in vocab.word2index
+                else 0
+                for word in sentence
+            ]
+            spk = (
+                vocab.word2index["USR"]
+                if i % 2 == 0
+                else vocab.word2index["SYS"]
+            )
+            x_mask += [spk for _ in range(len(sentence))]
+        assert len(x_dial) == len(x_mask)
+
+        return torch.LongTensor(x_dial), torch.LongTensor(x_mask)
+
+
+
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
