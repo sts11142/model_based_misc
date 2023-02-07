@@ -798,6 +798,8 @@ class GenerationMixin:
             >>> print("Generated:", tokenizer.decode(outputs[0], skip_special_tokens=True))
         """
 
+        print(model_kwargs)
+
         # set init values
         num_beams = num_beams if num_beams is not None else self.config.num_beams
         num_beam_groups = num_beam_groups if num_beam_groups is not None else self.config.num_beam_groups

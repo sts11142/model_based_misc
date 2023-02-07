@@ -427,8 +427,9 @@ def main():
         d = {}
         relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
         for r in relations:
-            pad_batch, _ = merge(my_di[r])
-            d[r] = pad_batch
+            # pad_batch, _ = merge(my_di[r])
+            # d[r] = pad_batch
+            d[r] = my_di[r]
             d[f"{r}_txt"] = my_di[f"{r}_txt"]
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
