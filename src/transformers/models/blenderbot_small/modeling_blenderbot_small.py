@@ -1986,6 +1986,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
         # src_mask = enc_batch.data.eq(1).eq(False)
         if d is not None:
+            print("no d")
             enc_outputs = encoder_outputs.last_hidden_state
             cs_embs = []
             cs_masks = []
@@ -2113,7 +2114,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             # loss += emo_loss
 
             # ここも変えよう
-            emotion_logits = emotion_logits
+            # emotion_logits = emotion_logits
             # if emo_logits_cem is not None:
                 # emotion_logits = emo_logits_cem
 
