@@ -350,13 +350,12 @@ def main():
         ]
     
     def merge(sequences):
-        lengths = [len(seq) for seq in sequences]
+        lengths = [len(sequences)]
         padded_seqs = torch.ones(
             len(sequences), max(lengths)
         ).long()  ## padding index 1
-        for i, seq in enumerate(sequences):
-            end = lengths[i]
-            padded_seqs[i, :end] = seq[:end]
+        end = lengths
+        padded_seqs[:, :end] = sequences[:end]
         return padded_seqs, lengths
 
     my_dicts = []
@@ -378,9 +377,6 @@ def main():
         my_dict["x_react"] = preprocess(my_dict["x_react_txt"], vocab, cs="react")
 
         my_dicts.append(my_dict)
-    
-    d = {}
-    relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
 
     additional_special_tokens = ["[Question]", "[Reflection of feelings]", "[Information]",
                                  "[Restatement or Paraphrasing]", "[Others]", "[Self-disclosure]",
@@ -405,7 +401,7 @@ def main():
     strategy_hits = []
     strategy_record = []
     strategy_hits_topk = [[] for _ in range(8)]
-    for idx, (c_text, comet_row, comet_st_row, cs_row, my_di) in tqdm(enumerate(zip(chat_texts[:-1], comet[:-1], comet_st[:-1], my_dicts[:-1])), desc="Testing"):
+    for idx, (c_text, comet_row, comet_st_row, my_di) in tqdm(enumerate(zip(chat_texts[:-1], comet[:-1], comet_st[:-1], my_dicts[:-1])), desc="Testing"):
         if "EOS" not in c_text:     # "EOS"が含まれていなければスキップ
             continue
         # if idx>=100:
@@ -427,6 +423,13 @@ def main():
         decoder_strategy_ids = decoder_strategy_ids[:, 0]
         # print(decoder_strategy_ids)
         # print(1/0)
+
+        d = {}
+        relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
+        for r in relations:
+            pad_batch, _ = merge(my_di[r])
+            d[r] = pad_batch
+            d[f"{r}_txt"] = my_di[f"{r}_txt"]
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
 
