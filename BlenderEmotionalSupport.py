@@ -1672,7 +1672,7 @@ def generate(args):
         json.dump(result, f, indent=2, ensure_ascii=False)
     print("=" * 100)
 
-def preprocess(self, arr, vocab, anw=False, cs=None, emo=False):
+def preprocess(arr, vocab, anw=False, cs=None, emo=False):
     """Converts words to ids."""
     if anw:
         sequence = [
