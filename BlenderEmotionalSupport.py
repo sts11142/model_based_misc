@@ -102,7 +102,7 @@ class Args():
         self.test_file_name = "testWithStrategy_short.tsv"
         self.train_comet_file = "trainComet.txt"
         self.eval_comet_file = "devComet.txt"
-        self.test_comet_file = "testcomet.txt"
+        self.test_comet_file = "testComet.txt"
         self.situation_train_comet_file = "trainComet_st.txt"
         self.situation_eval_comet_file = "devComet_st.txt"
         self.situation_test_comet_file = "testComet_st.txt"
