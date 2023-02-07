@@ -343,10 +343,8 @@ class GenerationMixin:
         generate method.
         """
         # return {"input_ids": input_ids}
-        if kwargs["d"]['x_react'] is not None:
-            return {"input_ids": input_ids, "d": kwargs["d"]}
-        else:
-            return {"input_ids": input_ids}
+        kwargs["input_ids"] = input_ids
+        return kwargs
 
     def adjust_logits_during_generation(self, logits: torch.FloatTensor, **kwargs) -> torch.FloatTensor:
         """
