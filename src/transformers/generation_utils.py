@@ -343,7 +343,7 @@ class GenerationMixin:
         generate method.
         """
         # return {"input_ids": input_ids}
-        if kwargs["d"] is not None:
+        if kwargs["d"]['x_react'] is not None:
             return {"input_ids": input_ids, "d": kwargs["d"]}
         else:
             return {"input_ids": input_ids}
