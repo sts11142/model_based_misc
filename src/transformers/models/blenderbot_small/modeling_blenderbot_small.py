@@ -598,14 +598,17 @@ class BlenderbotSmallDecoderLayer(nn.Module):
             )
             hidden_states_st = F.dropout(hidden_states_st, p=self.dropout, training=self.training)
 
-            hidden_states_empathy, _, _ = self.encoder_attn_empathy(
-                hidden_states=hidden_states,
-                key_value_states=cog_ref_ctx,
-                attention_mask=encoder_attention_mask,
-                # past_key_value=cross_attn_past_key_value,
-                # output_attentions=output_attentions,
-            )
-            hidden_states_empathy = F.dropout(hidden_states_empathy, p=self.dropout, training=self.training)
+            if cog_ref_ctx is not None:
+                hidden_states_empathy, _, _ = self.encoder_attn_empathy(
+                    hidden_states=hidden_states,
+                    key_value_states=cog_ref_ctx,
+                    attention_mask=encoder_attention_mask,
+                    # past_key_value=cross_attn_past_key_value,
+                    # output_attentions=output_attentions,
+                )
+                hidden_states_empathy = F.dropout(hidden_states_empathy, p=self.dropout, training=self.training)
+            else:
+                hidden_states_empathy = 0
 
             # hidden_states = torch.cat([hidden_states_encoder, hidden_states_strategy, hidden_states_st, hidden_states_sp], dim=-1)
             # hidden_states = self.activation_fn(self.fc_multimodule(hidden_states))
@@ -1982,52 +1985,53 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # enc_batch = d["input_batch"]
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
         # src_mask = enc_batch.data.eq(1).eq(False)
+        if d is not None:
+            enc_outputs = encoder_outputs.last_hidden_state
+            cs_embs = []
+            cs_masks = []
+            cs_outputs = []
+            for r in self.rels:
+                device = torch.device("cuda")
+                # device = torch.device("cpu")
+                # emb = self.emb_tokens(d[r]).to(device)
+                emb = self.model.shared(d[r]).to(device)
+                # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
+                mask = d[r].data.eq(1).eq(False)
+                cs_embs.append(emb)
+                cs_masks.append(mask)
+                if r != "x_react":
+                    enc_output = self.cem_cog_encoder(inputs_embeds=emb, attention_mask=mask)
+                else:
+                    enc_output = self.cem_emo_encoder(inputs_embeds=emb, attention_mask=mask)
+                cs_outputs.append(enc_output.last_hidden_state)
 
-        enc_outputs = encoder_outputs.last_hidden_state
-        cs_embs = []
-        cs_masks = []
-        cs_outputs = []
-        for r in self.rels:
-            device = torch.device("cuda")
-            # device = torch.device("cpu")
-            # emb = self.emb_tokens(d[r]).to(device)
-            emb = self.model.shared(d[r]).to(device)
-            # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
-            mask = d[r].data.eq(1).eq(False)
-            cs_embs.append(emb)
-            cs_masks.append(mask)
-            if r != "x_react":
-                enc_output = self.cem_cog_encoder(inputs_embeds=emb, attention_mask=mask)
-            else:
-                enc_output = self.cem_emo_encoder(inputs_embeds=emb, attention_mask=mask)
-            cs_outputs.append(enc_output.last_hidden_state)
+            cls_tokens = [c[:, 0].unsqueeze(1) for c in cs_outputs]
 
-        cls_tokens = [c[:, 0].unsqueeze(1) for c in cs_outputs]
+            # Shape: batch_size * 1 * 300
+            cog_cls = cls_tokens[:-1]
+            emo_cls = torch.mean(cs_outputs[-1], dim=1).unsqueeze(1)
 
-        # Shape: batch_size * 1 * 300
-        cog_cls = cls_tokens[:-1]
-        emo_cls = torch.mean(cs_outputs[-1], dim=1).unsqueeze(1)
+            dim = [-1, enc_outputs.shape[1], -1]
+            # Emotion
+            emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
+            emo_concat = self.embedding_proj(emo_concat)
+            emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
+            emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
 
-        dim = [-1, enc_outputs.shape[1], -1]
-        # Emotion
-        emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
-        emo_concat = self.embedding_proj(emo_concat)
-        emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
-        emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
+            # Cognition
+            cog_outputs = []
+            for cls in cog_cls:
+                cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
+                cog_concat = self.embedding_proj(cog_concat)
+                cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
+                cog_outputs.append(cog_concat_enc.last_hidden_state)
 
-        # Cognition
-        cog_outputs = []
-        for cls in cog_cls:
-            cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
-            cog_concat = self.embedding_proj(cog_concat)
-            cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
-            cog_outputs.append(cog_concat_enc.last_hidden_state)
-
-        cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx.last_hidden_state], dim=-1)
-        cog_contrib = nn.Sigmoid()(cog_ref_ctx)
-        cog_ref_ctx = cog_contrib * cog_ref_ctx
-        cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
-
+            cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx.last_hidden_state], dim=-1)
+            cog_contrib = nn.Sigmoid()(cog_ref_ctx)
+            cog_ref_ctx = cog_contrib * cog_ref_ctx
+            cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
+        else:
+            cog_ref_ctx = None
         # mixed_hidden_states = torch.cat([cog_ref_ctx, encoder_outputs.last_hidden_state], dim=-1)
         # mixed_hidden_states = self.mixed_hidden_lin(mixed_hidden_states)
 
