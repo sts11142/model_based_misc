@@ -1388,7 +1388,8 @@ class GenerationMixin:
             # print(model_kwargs)
             print("after kwargs: ", model_kwargs["d"]["x_react"])
             # print("model inputs: ", (model_inputs["input_ids"][0]))
-            print("model inputs: ", model_inputs["d"]["x_react"])
+            print(input_ids.keys())
+            # print("model inputs: ", model_inputs["d"]["x_react"])
             # print(1/0)
             # forward pass to get next token
             # print(model_inputs)
