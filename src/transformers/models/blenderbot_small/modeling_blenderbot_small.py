@@ -1985,6 +1985,10 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # enc_batch = d["input_batch"]
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
         # src_mask = enc_batch.data.eq(1).eq(False)
+
+        if comet_embs is not None:
+            print("no comet")
+
         if d is not None:
             enc_outputs = encoder_outputs.last_hidden_state
             cs_embs = []
