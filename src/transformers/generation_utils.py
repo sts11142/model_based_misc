@@ -350,6 +350,7 @@ class GenerationMixin:
         generate method.
         """
         kwargs["inputs_ids"] = input_ids
+        kwargs["encoder_outputs"] = None
         # return {"input_ids": input_ids}
         return kwargs
 
