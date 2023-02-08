@@ -1382,6 +1382,8 @@ class GenerationMixin:
         while cur_len < max_length:
             # prepare model inputs
             print("before kwargs: ", model_kwargs["d"]["x_react"])
+            print(model_kwargs.keys())
+            print(**model_kwargs)
             # print(model_kwargs)
             # print(1/0)
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
