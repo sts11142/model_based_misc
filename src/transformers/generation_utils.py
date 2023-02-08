@@ -349,10 +349,10 @@ class GenerationMixin:
         Implement in subclasses of :class:`~transformers.PreTrainedModel` for custom behavior to prepare inputs in the
         generate method.
         """
-        kwargs["inputs_ids"] = input_ids
-        kwargs["encoder_outputs"] = None  # generateモードにするため
-        # return {"input_ids": input_ids}
-        return kwargs
+        # kwargs["inputs_ids"] = input_ids
+        # kwargs["encoder_outputs"] = None  # generateモードにするため
+        return {"input_ids": input_ids}
+        # return kwargs
 
     def adjust_logits_during_generation(self, logits: torch.FloatTensor, **kwargs) -> torch.FloatTensor:
         """
