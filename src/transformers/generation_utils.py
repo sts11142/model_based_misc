@@ -350,7 +350,7 @@ class GenerationMixin:
         generate method.
         """
         kwargs["inputs_ids"] = input_ids
-        kwargs["encoder_outputs"] = None
+        kwargs["encoder_outputs"] = None  # generateモードにするため
         # return {"input_ids": input_ids}
         return kwargs
 
@@ -1394,6 +1394,7 @@ class GenerationMixin:
             # model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
             model_inputs = self.prepare_inputs_for_generation(input_ids, model_kwargs)
             print(model_inputs.keys())
+            model_inputs["encoder_outputs"] = None
             # print(model_kwargs)
             # print("model inputs: ", (model_inputs["input_ids"][0]))
             # print("model inputs: ", model_inputs["d"]["x_react"])
