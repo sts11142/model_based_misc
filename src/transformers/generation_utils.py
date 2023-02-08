@@ -337,22 +337,22 @@ class GenerationMixin:
     :class:`~transformers.PreTrainedModel`.
     """
 
-    # def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, **kwargs) -> Dict[str, Any]:
-    #     """
-    #     Implement in subclasses of :class:`~transformers.PreTrainedModel` for custom behavior to prepare inputs in the
-    #     generate method.
-    #     """
-    #     return {"input_ids": input_ids}
-
-    def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, kwargs) -> Dict[str, Any]:
+    def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, **kwargs) -> Dict[str, Any]:
         """
         Implement in subclasses of :class:`~transformers.PreTrainedModel` for custom behavior to prepare inputs in the
         generate method.
         """
-        # kwargs["inputs_ids"] = input_ids
-        # kwargs["encoder_outputs"] = None  # generateモードにするため
         return {"input_ids": input_ids}
-        # return kwargs
+
+    # def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, kwargs) -> Dict[str, Any]:
+    #     """
+    #     Implement in subclasses of :class:`~transformers.PreTrainedModel` for custom behavior to prepare inputs in the
+    #     generate method.
+    #     """
+    #     # kwargs["inputs_ids"] = input_ids
+    #     # kwargs["encoder_outputs"] = None  # generateモードにするため
+    #     return {"input_ids": input_ids}
+    #     # return kwargs
 
     def adjust_logits_during_generation(self, logits: torch.FloatTensor, **kwargs) -> torch.FloatTensor:
         """
@@ -1391,11 +1391,11 @@ class GenerationMixin:
             # prepare model inputs
             # print(model_kwargs)
             # print(1/0)
-            # model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
             print("kwa: ", model_kwargs.keys())
-            model_inputs = self.prepare_inputs_for_generation(input_ids, model_kwargs)
+            model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
+            # model_inputs = self.prepare_inputs_for_generation(input_ids, model_kwargs)
             print("inp: ", model_inputs.keys())
-            model_inputs["encoder_outputs"] = None
+            # model_inputs["encoder_outputs"] = None
             # print(model_kwargs)
             # print("model inputs: ", (model_inputs["input_ids"][0]))
             # print("model inputs: ", model_inputs["d"]["x_react"])
