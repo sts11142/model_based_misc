@@ -1554,7 +1554,7 @@ def generate(args):
         for r in relations:
         #     pad_batch, _ = merge(my_di[r])
             my_di[r] = my_di[r].to(config.device)
-            d[r] = my_di[r]
+            d[r] = [my_di[r]]
             d[f"{r}_txt"] = my_di[f"{r}_txt"]
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
