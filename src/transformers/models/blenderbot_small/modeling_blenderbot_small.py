@@ -1986,55 +1986,55 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         # src_mask = enc_batch.data.eq(1).unsqueeze(1)
         # src_mask = enc_batch.data.eq(1).eq(False)
 
-        if d is not None:
-            enc_outputs = encoder_outputs.last_hidden_state
-            cs_embs = []
-            cs_masks = []
-            cs_outputs = []
-            for r in self.rels:
-                device = torch.device("cuda")
-                # device = torch.device("cpu")
-                # emb = self.emb_tokens(d[r]).to(device)
-                emb = self.model.shared(d[r]).to(device)
-                # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
-                mask = d[r].data.eq(1).eq(False)
-                cs_embs.append(emb)
-                cs_masks.append(mask)
-                if r != "x_react":
-                    enc_output = self.cem_cog_encoder(inputs_embeds=emb, attention_mask=mask)
-                else:
-                    enc_output = self.cem_emo_encoder(inputs_embeds=emb, attention_mask=mask)
-                cs_outputs.append(enc_output.last_hidden_state)
+        # if d is not None:
+        enc_outputs = encoder_outputs.last_hidden_state
+        cs_embs = []
+        cs_masks = []
+        cs_outputs = []
+        for r in self.rels:
+            device = torch.device("cuda")
+            # device = torch.device("cpu")
+            # emb = self.emb_tokens(d[r]).to(device)
+            emb = self.model.shared(d[r]).to(device)
+            # mask = d[r].data.eq(self.config.PAD_idx).unsqueeze(1)
+            mask = d[r].data.eq(1).eq(False)
+            cs_embs.append(emb)
+            cs_masks.append(mask)
+            if r != "x_react":
+                enc_output = self.cem_cog_encoder(inputs_embeds=emb, attention_mask=mask)
+            else:
+                enc_output = self.cem_emo_encoder(inputs_embeds=emb, attention_mask=mask)
+            cs_outputs.append(enc_output.last_hidden_state)
 
-            cls_tokens = [c[:, 0].unsqueeze(1) for c in cs_outputs]
+        cls_tokens = [c[:, 0].unsqueeze(1) for c in cs_outputs]
 
-            # Shape: batch_size * 1 * 300
-            cog_cls = cls_tokens[:-1]
-            emo_cls = torch.mean(cs_outputs[-1], dim=1).unsqueeze(1)
+        # Shape: batch_size * 1 * 300
+        cog_cls = cls_tokens[:-1]
+        emo_cls = torch.mean(cs_outputs[-1], dim=1).unsqueeze(1)
 
-            dim = [-1, enc_outputs.shape[1], -1]
-            # Emotion
-            emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
-            emo_concat = self.embedding_proj(emo_concat)
-            emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
-            emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
+        dim = [-1, enc_outputs.shape[1], -1]
+        # Emotion
+        emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
+        emo_concat = self.embedding_proj(emo_concat)
+        emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
+        emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
 
-            # Cognition
-            cog_outputs = []
-            for cls in cog_cls:
-                cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
-                cog_concat = self.embedding_proj(cog_concat)
-                cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
-                cog_outputs.append(cog_concat_enc.last_hidden_state)
+        # Cognition
+        cog_outputs = []
+        for cls in cog_cls:
+            cog_concat = torch.cat([enc_outputs, cls.expand(dim)], dim=-1)
+            cog_concat = self.embedding_proj(cog_concat)
+            cog_concat_enc = self.cem_cog_ref_encoder(inputs_embeds=cog_concat, attention_mask=attention_mask)
+            cog_outputs.append(cog_concat_enc.last_hidden_state)
 
-            cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx.last_hidden_state], dim=-1)
-            cog_contrib = nn.Sigmoid()(cog_ref_ctx)
-            cog_ref_ctx = cog_contrib * cog_ref_ctx
-            cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
-        else:
-            print("no d")
-            cog_ref_ctx = None
-            emo_logits_cem = None
+        cog_ref_ctx = torch.cat(cog_outputs + [emo_ref_ctx.last_hidden_state], dim=-1)
+        cog_contrib = nn.Sigmoid()(cog_ref_ctx)
+        cog_ref_ctx = cog_contrib * cog_ref_ctx
+        cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
+        # else:
+        #     print("no d")
+        #     cog_ref_ctx = None
+        #     emo_logits_cem = None
         # mixed_hidden_states = torch.cat([cog_ref_ctx, encoder_outputs.last_hidden_state], dim=-1)
         # mixed_hidden_states = self.mixed_hidden_lin(mixed_hidden_states)
 
@@ -2104,20 +2104,18 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
 
         if emotion is not None:
             ## loss関数で切り替えの時に変更するのは2箇所
-            emo_loss_fct = CrossEntropyLoss()
-            # print(emotion_logits.shape, emotion)
+            # emo_loss_fct = CrossEntropyLoss()
             # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
-            emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion)
+            # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion)
             # emo_loss = emo_loss_fct(emo_logits_cem.view(-1, 11), emotion.view(-1))
-            # emo_label = torch.LongTensor(d["program_label"]).to(device)
-            # emo_loss = nn.CrossEntropyLoss()(emo_logits_cem, emo_label).to(device)
+            emo_label = torch.LongTensor(d["program_label"]).to(device)
+            emo_loss = nn.CrossEntropyLoss()(emo_logits_cem, emo_label).to(device)
             # emo_loss = nn.CrossEntropyLoss()(emotion_logits, emo_label).to(device)
             loss += emo_loss
-
             # ここも変えよう
             # emotion_logits = emotion_logits
             # if emo_logits_cem is not None:
-                # emotion_logits = emo_logits_cem
+            emotion_logits = emo_logits_cem
 
         intensity_label = None
         if decoder_turn_ids is not None:

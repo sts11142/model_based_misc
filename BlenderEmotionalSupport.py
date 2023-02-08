@@ -84,8 +84,9 @@ class Args():
         # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
         # nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
         # nowtime = '01301439'  # normal, emo_logits_cemではなくemotion_logitsを使用する
-        nowtime = '01311118'  # teian, no_emo_loss
+        # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
+        nowtime = '02090038_teian_EELoss'
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
@@ -1736,5 +1737,5 @@ def preprocess(arr, vocab, anw=False, cs=None, emo=False):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
