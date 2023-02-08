@@ -1383,7 +1383,8 @@ class GenerationMixin:
             # prepare model inputs
             print("before kwargs: ", model_kwargs["d"]["x_react"])
             print(model_kwargs.keys())
-            print(**model_kwargs)
+            ab = **model_kwargs
+            print(ab)
             # print(model_kwargs)
             # print(1/0)
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
