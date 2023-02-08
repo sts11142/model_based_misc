@@ -1553,6 +1553,7 @@ def generate(args):
         relations = ["x_intent", "x_need", "x_want", "x_effect", "x_react"]
         for r in relations:
         #     pad_batch, _ = merge(my_di[r])
+            my_di[r] = my_di[r].to(config.device)
             d[r] = my_di[r]
             d[f"{r}_txt"] = my_di[f"{r}_txt"]
 
