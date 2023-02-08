@@ -1380,12 +1380,12 @@ class GenerationMixin:
         # auto-regressive generation
         while cur_len < max_length:
             # prepare model inputs
-            print("before kwargs: ", model_kwargs)
+            print("before kwargs: ", model_kwargs["d"]["x_react"])
             # print(model_kwargs)
             # print(1/0)
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
             # print(model_kwargs)
-            print("after kwargs: ", model_kwargs)
+            print("after kwargs: ", model_kwargs["d"]["x_react"])
             print("model inputs: ", model_inputs)
             # print(1/0)
             # forward pass to get next token
