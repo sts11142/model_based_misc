@@ -1558,7 +1558,6 @@ def generate(args):
             d[r] = torch.tensor(d[r], dtype=torch.long)
             d[r] = d[r].unsqueeze(0)
             # d[f"{r}_txt"] = my_di[f"{r}_txt"]
-        print(d["x_react"].shape)
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
 
