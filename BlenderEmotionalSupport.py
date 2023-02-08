@@ -1556,7 +1556,9 @@ def generate(args):
             my_di[r] = my_di[r].to(config.device)
             d[r] = my_di[r]
             d[r] = torch.tensor(d[r], dtype=torch.long)
+            d[r] = d[r].unsqueeze(0)
             # d[f"{r}_txt"] = my_di[f"{r}_txt"]
+        print(d["x_react"].shape)
 
         gts.append(tokenizer.decode(f.decoder_input_ids, skip_special_tokens=True))
 
@@ -1565,7 +1567,7 @@ def generate(args):
         comet_mask = torch.tensor([f.comet_mask], dtype=torch.long)
         comet_ids_st = torch.tensor([f.comet_st_ids], dtype=torch.long)
         comet_mask_st = torch.tensor([f.comet_st_mask], dtype=torch.long)
-        d = torch.tensor([d], dtype=torch.long)
+        # d = torch.tensor([d], dtype=torch.long)
 
         comet_ids = comet_ids.to(args.device)
         comet_mask = comet_mask.to(args.device)
