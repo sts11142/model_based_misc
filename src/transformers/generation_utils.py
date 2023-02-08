@@ -1392,9 +1392,9 @@ class GenerationMixin:
             # print(model_kwargs)
             # print(1/0)
             # model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
-            print(model_kwargs.keys())
+            print("kwa: ", model_kwargs.keys())
             model_inputs = self.prepare_inputs_for_generation(input_ids, model_kwargs)
-            print(model_inputs.keys())
+            print("inp: ", model_inputs.keys())
             model_inputs["encoder_outputs"] = None
             # print(model_kwargs)
             # print("model inputs: ", (model_inputs["input_ids"][0]))
