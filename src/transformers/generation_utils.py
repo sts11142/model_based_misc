@@ -342,8 +342,7 @@ class GenerationMixin:
         Implement in subclasses of :class:`~transformers.PreTrainedModel` for custom behavior to prepare inputs in the
         generate method.
         """
-        print("nande~~~")
-        return {"input_ids": input_ids, "d": kwargs["d"]}
+        return {"input_ids": input_ids}
 
     # def prepare_inputs_for_generation(self, input_ids: torch.LongTensor, kwargs) -> Dict[str, Any]:
     #     """
@@ -1396,6 +1395,7 @@ class GenerationMixin:
             model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)
             # model_inputs = self.prepare_inputs_for_generation(input_ids, model_kwargs)
             print("inp: ", model_inputs.keys())
+            print("d.keys(): ", model_kwargs["d"].keys())
             # model_inputs["encoder_outputs"] = None
             # print(model_kwargs)
             # print("model inputs: ", (model_inputs["input_ids"][0]))
@@ -1411,6 +1411,7 @@ class GenerationMixin:
                 return_dict=True,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
+                d=model_kwargs["d"],
             )
 
             next_token_logits = outputs.lm_logits[:, -1, :]
