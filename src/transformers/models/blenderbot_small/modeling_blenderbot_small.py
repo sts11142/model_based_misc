@@ -598,17 +598,17 @@ class BlenderbotSmallDecoderLayer(nn.Module):
             )
             hidden_states_st = F.dropout(hidden_states_st, p=self.dropout, training=self.training)
 
-            if cog_ref_ctx is not None:
-                hidden_states_empathy, _, _ = self.encoder_attn_empathy(
-                    hidden_states=hidden_states,
-                    key_value_states=cog_ref_ctx,
-                    attention_mask=encoder_attention_mask,
-                    # past_key_value=cross_attn_past_key_value,
-                    # output_attentions=output_attentions,
-                )
-                hidden_states_empathy = F.dropout(hidden_states_empathy, p=self.dropout, training=self.training)
-            else:
-                hidden_states_empathy = 0
+            # if cog_ref_ctx is not None:
+            hidden_states_empathy, _, _ = self.encoder_attn_empathy(
+                hidden_states=hidden_states,
+                key_value_states=cog_ref_ctx,
+                attention_mask=encoder_attention_mask,
+                # past_key_value=cross_attn_past_key_value,
+                # output_attentions=output_attentions,
+            )
+            hidden_states_empathy = F.dropout(hidden_states_empathy, p=self.dropout, training=self.training)
+            # else:
+            #     hidden_states_empathy = 0
 
             # hidden_states = torch.cat([hidden_states_encoder, hidden_states_strategy, hidden_states_st, hidden_states_sp], dim=-1)
             # hidden_states = self.activation_fn(self.fc_multimodule(hidden_states))
