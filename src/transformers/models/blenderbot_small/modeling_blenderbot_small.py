@@ -2105,8 +2105,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
         if emotion is not None:
             ## loss関数で切り替えの時に変更するのは2箇所
             emo_loss_fct = CrossEntropyLoss()
-            # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
-            emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion)
+            emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))
+            # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion)
             # emo_loss = emo_loss_fct(emo_logits_cem.view(-1, 11), emotion.view(-1))
             # emo_label = torch.LongTensor(d["program_label"]).to(device)
             # emo_loss = nn.CrossEntropyLoss()(emo_logits_cem, emo_label).to(device)
