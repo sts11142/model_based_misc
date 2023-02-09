@@ -86,7 +86,8 @@ class Args():
         # nowtime = '01301439'  # normal, emo_logits_cemではなくemotion_logitsを使用する
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
-        nowtime = '02090038_teian_EELoss'
+        # nowtime = '02090038_teian_EELoss'
+        nowtime = '02091151_teian_normal_emoLoss'
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
