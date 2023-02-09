@@ -66,8 +66,8 @@ class Args():
         # TAG = 'ablation_post'
     #    nowtime = '10251756'
         # nowtime = '01211638'
-        # nowtime = '01300903'  # normal_misc, batch16, turn on emo_loss
-        nowtime = '01301154'  # normal_misc, batch16, turn off emo_loss
+        nowtime = '01300903'  # normal_misc, batch16, turn on emo_loss
+        # nowtime = '01301154'  # normal_misc, batch16, turn off emo_loss
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
@@ -1370,6 +1370,7 @@ def generate(args):
     print("Generate finished~")
     metric = Metric(toker=tokenizer, hyp_path=generate_file_path, ref_path=reference_file_path)
     result, result_list = metric.close()
+    result['acc'] = sum(strategy_hits)/len(strategy_hits)
     print(result)
     with open(metrics_file_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
@@ -1377,5 +1378,5 @@ def generate(args):
 
 if __name__ == "__main__":
     args = Args()
-    main(args)
-    # generate(args)
+    # main(args)
+    generate(args)
