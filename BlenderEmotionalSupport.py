@@ -1737,5 +1737,6 @@ def preprocess(arr, vocab, anw=False, cs=None, emo=False):
 
 if __name__ == "__main__":
     args = Args()
+    print('nowtime is: ' + str(args.nowtime))
     main(args)
     # generate(args)
