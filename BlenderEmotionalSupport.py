@@ -82,10 +82,11 @@ class Args():
         # nowtime = '01211835'
         # nowtime = '01260023'
         # nowtime = '01261523'  # cross-attn, emo_loss, cem_emo_logit
-        nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
+        # nowtime = '01291417'  # encoder4つをそれぞれ個別に学習してみる
         # nowtime = '01301439'  # normal, emo_logits_cemではなくemotion_logitsを使用する
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
+        nowtime = '05251503_teianEEemo_direct'
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
