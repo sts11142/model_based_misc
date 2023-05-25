@@ -88,6 +88,7 @@ class Args():
         # nowtime = '02080141'  # teian, normal_emo_logits
         nowtime = '05251503_teianEEemo_direct'
         # nowtime = 'debug'
+        self.now_time = nowtime
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
     #    self.output_dir = os.path.join('lsy641/ESC_Blender_Strategy', TAG)
@@ -1737,6 +1738,6 @@ def preprocess(arr, vocab, anw=False, cs=None, emo=False):
 
 if __name__ == "__main__":
     args = Args()
-    print('nowtime is: ' + str(args.nowtime))
+    print('nowtime is: ' + str(args.now_time))
     main(args)
     # generate(args)
