@@ -1737,5 +1737,5 @@ def preprocess(arr, vocab, anw=False, cs=None, emo=False):
 
 if __name__ == "__main__":
     args = Args()
-    # main(args)
-    generate(args)
+    main(args)
+    # generate(args)
