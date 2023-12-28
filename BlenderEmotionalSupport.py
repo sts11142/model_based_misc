@@ -120,7 +120,8 @@ class Args():
         # self.per_gpu_train_batch_size = 20
         self.per_gpu_train_batch_size = 16
         self.per_gpu_eval_batch_size = 50
-        self.gradient_accumulation_steps = 1
+        # self.gradient_accumulation_steps = 1
+        self.gradient_accumulation_steps = 16
         self.learning_rate = 2e-5 #RAW 2
         self.weight_decay = 0
         self.adam_epsilon = 1e-8 #RAW 8
