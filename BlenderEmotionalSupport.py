@@ -1407,12 +1407,7 @@ def main(args):
     # Training
     if args.do_train:
         # Create output directory if needed
-        if os.path.exists(args.output_dir):
-            raise ValueError(
-                "Output directory ({}) already exists and is not empty. Use --overwrite_output_dir to overcome."
-                    .format(args.output_dir))
-        else:
-            os.makedirs(args.output_dir, exist_ok=True)
+        os.makedirs(args.output_dir, exist_ok=True)
         args.train_dataset = load_and_cache_examples(args, tokenizer, df_trn, comet_trn, st_comet_trn, data_tra, vocab, evaluate=False, strategy=args.strategy)
         global_step, tr_loss = train(args, args.train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
