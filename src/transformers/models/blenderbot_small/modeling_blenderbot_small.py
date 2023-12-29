@@ -883,7 +883,8 @@ class BlenderbotSmallEncoder(BlenderbotSmallPreTrainedModel):
         self.intensity_head = nn.Linear(config.d_model, 1) # 512次元 -> 1次元
         self.strategy_head = nn.Linear(config.d_model, 8) # 512次元 -> 8次元
         self.batchNorm_emotion = nn.BatchNorm1d(11)
-        self.batchNorm_strategy = nn.BatchNorm1d(8)
+        # self.batchNorm_strategy = nn.BatchNorm1d(8)
+        self.batchNorm_strategy = nn.LayerNorm(8)
 
         self.strategy_embedding = nn.Embedding(8 + 1, embed_dim, 8)
         self.strategy_id = torch.tensor(range(8), dtype=torch.long) # [0, 1, 2, ..., 7]
