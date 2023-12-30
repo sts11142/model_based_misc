@@ -90,7 +90,12 @@ class Args():
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
         # nowtime = '20231227_01_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
-        nowtime = '20231229_03_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime = '20231229_04_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime_note = """
+            20231229_04_teian_EELoss
+            wandbの設定
+            EELossに切り替えて正しく実験できるかどうか
+        """
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
