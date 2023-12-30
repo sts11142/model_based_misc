@@ -2105,6 +2105,10 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
 
         if emotion is not None:
             ## loss関数で切り替えの時に変更するのは2箇所
+            ### 1. EELoss: emotion_logitsをemo_logits_cemにするとEELossに
+            ###    normal EmoLoss: emotion_logits
+            ### 2. emotion_logitsにemo_logits_cemを代入する
+
             emo_loss_fct = CrossEntropyLoss()
             # print(emotion_logits.shape, emotion)
             # emo_loss = emo_loss_fct(emotion_logits.view(-1, 11), emotion.view(-1))

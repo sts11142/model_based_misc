@@ -1114,8 +1114,11 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                         "emo_loss": (tr_emo_loss - logging_emo_loss) / args.logging_steps,
                         "strategy_loss": (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
                         "intensity_loss": (tr_intensity_loss - logging_intensity_loss) / args.logging_steps,
+                        "eval_perplexity": results['eval_perplexity'],
+                        "eval_emotion_predict_accuracy": results['eval_emotion_predict_accuracy'],
+                        "eval_strategy_predict_accuracy": results['eval_strategy_predict_accuracy']
                     })
-
+                    
                     logging_loss = tr_loss
                     logging_lm_loss = tr_lm_loss
                     logging_emo_loss = tr_emo_loss
