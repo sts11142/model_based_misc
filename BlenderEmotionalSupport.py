@@ -33,6 +33,9 @@ from tqdm import tqdm, trange
 import time
 from pathlib import Path
 import json
+
+import wandb
+
 from src.transformers import (
     MODEL_WITH_LM_HEAD_MAPPING,
     WEIGHTS_NAME,
@@ -87,7 +90,7 @@ class Args():
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
         # nowtime = '20231227_01_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
-        nowtime = '20231229_02_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime = '20231229_03_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
         self.output_dir = os.path.join('blender_strategy', nowtime)
@@ -884,6 +887,21 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
         ).to(args.device)
 
+    # Weight and Biases
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="misc-cem-block teian/EELoss/EEtoSL",
+        
+        # track hyperparameters and run metadata
+        config={
+            "per_gpu_train_batch_size": args.per_gpu_train_batch_size,
+            "gradient_accumulation_steps": args.gradient_accumulation_steps,
+            "architecture": "based MISC",
+            "dataset": "ESConv MISCver.",
+           "epochs": 10,
+        }
+    )
+
 
     # Train!
     logger.info("***** Running training *****")
@@ -1089,6 +1107,14 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                                 global_step, (tr_loss - logging_loss) / args.logging_steps, (tr_lm_loss - logging_lm_loss) / args.logging_steps,
                                 (tr_emo_loss - logging_emo_loss) / args.logging_steps, (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
                                 (tr_intensity_loss - logging_intensity_loss) / args.logging_steps)
+                    
+                    wandb.log({
+                        "loss": (tr_loss - logging_loss) / args.logging_steps,
+                        "lm_loss": (tr_lm_loss - logging_lm_loss) / args.logging_steps,
+                        "emo_loss": (tr_emo_loss - logging_emo_loss) / args.logging_steps,
+                        "strategy_loss": (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
+                        "intensity_loss": (tr_intensity_loss - logging_intensity_loss) / args.logging_steps,
+                    })
 
                     logging_loss = tr_loss
                     logging_lm_loss = tr_lm_loss
@@ -1127,6 +1153,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
 
     if args.local_rank in [-1, 0]:
         tb_writer.close()
+    
+    wandb.finish()
+
     print("Train finished~")
     return global_step, tr_loss / global_step
 
