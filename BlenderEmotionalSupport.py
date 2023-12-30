@@ -890,7 +890,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     # Weight and Biases
     wandb.init(
         # set the wandb project where this run will be logged
-        project="misc-cem-block teian/EELoss/EEtoSL",
+        project="misc-cem-block",
         
         # track hyperparameters and run metadata
         config={
