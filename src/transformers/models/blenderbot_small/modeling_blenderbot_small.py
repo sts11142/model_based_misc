@@ -2035,7 +2035,7 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             cog_ref_ctx = cog_contrib * cog_ref_ctx
             cog_ref_ctx = self.cem_cog_lin(cog_ref_ctx)
             print("cog_ref_ctx.shape: {}".format(cog_ref_ctx.shape))
-            print("hidden_state.shape: {}".format(enc_outputs))
+            print("hidden_state.shape: {}".format(enc_outputs.shape))
         else:
             print("no d")
             cog_ref_ctx = None
