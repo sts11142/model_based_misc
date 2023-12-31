@@ -2018,7 +2018,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             emo_concat = torch.cat([enc_outputs, emo_cls.expand(dim)], dim=-1)
             emo_concat = self.embedding_proj(emo_concat)
             emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
-            emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
+            # emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])  # [:, 0]: 2次元のテンソルを返す、[:, 0, :]: 1次元のテンソルを返す
+            emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0, :])  # [:, 0]: 2次元のテンソルを返す、[:, 0, :]: 1次元のテンソルを返す
 
             # Cognition
             cog_outputs = []
