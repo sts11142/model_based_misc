@@ -2019,6 +2019,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             emo_concat = self.embedding_proj(emo_concat)
             emo_ref_ctx = self.cem_emo_ref_encoder(inputs_embeds=emo_concat, attention_mask=attention_mask)
             emo_logits_cem = self.cem_emo_lin(emo_ref_ctx.last_hidden_state[:, 0])
+            print("[:, 0]: {}".format(emo_ref_ctx.last_hidden_state[:, 0]))
+            print("[:, 0, :]: {}".format(emo_ref_ctx.last_hidden_state[:, 0, :]))
             print("emo_logits_cem.shape: {}".format(emo_logits_cem.shape))
             print("emo_ref_ctx.shape: {}".format(emo_ref_ctx.last_hidden_state.shape))
 
