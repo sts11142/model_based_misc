@@ -2118,11 +2118,6 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
             emo_label = torch.LongTensor(d["program_label"]).to(device)
             emo_loss = nn.CrossEntropyLoss()(emo_logits_cem, emo_label).to(device)
 
-            logger.info("== emotion_logits: {}".format(emotion_logits.shape))
-            logger.info("== emo_logits_cem: {}".format(emo_logits_cem.shape))
-            logger.info("== emo_logits_cem: {}".format(emo_logits_cem.view(-1, 11).shape))
-            logger.info("=======")
-
             # emo_loss = nn.CrossEntropyLoss()(emotion_logits, emo_label).to(device)
             loss += emo_loss
 
