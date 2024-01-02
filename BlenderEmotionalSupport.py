@@ -95,6 +95,10 @@ class Args():
             20231229_06_teian_EELoss
             EELossに切り替えて正しく実験できるかどうか
             モジュールの切り替えによって、正しく結果に影響があるか
+            
+            EEモジュールの出力をSLモジュールの入力にする。
+            EEモジュールで感情分類を行う。
+            EEモジュールの出力を文脈埋め込みとして扱う（なぜか元々そうなっていた←）。
         """
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
@@ -1123,6 +1127,11 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                         "eval_emotion_predict_accuracy": results['eval_emotion_predict_accuracy'],
                         "eval_strategy_predict_accuracy": results['eval_strategy_predict_accuracy']
                     })
+
+                    # === debug ===
+                    print(d["x_react"])
+                    print(d["x_react_txt"])
+                    # === debug end ===
                     
                     logging_loss = tr_loss
                     logging_lm_loss = tr_lm_loss
@@ -1430,7 +1439,7 @@ def main(args):
     # load preproc data
     with open("./dataset/"+"dataset_preproc.p", "rb") as f:
         [data_tra, data_val, data_tst, vocab] = pickle.load(f)
-        # print("dataset_preproc sample: ",data_tra["emotion"], len(data_tra["emotion"]))
+        print("dataset_preproc sample: {}",data_tra["uttr_cs"], len(data_tra["emotion"]))
 
     # comet_trn,st_comet_trn, df_trn = comet_trn[:5000 + 1], st_comet_trn[:5000 + 1], df_trn[:5000 + 1]
     # comet_val, st_comet_val, df_val = comet_val[:100 + 1], st_comet_val[:100 + 1], df_val[:100 + 1]
