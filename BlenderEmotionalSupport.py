@@ -159,7 +159,7 @@ class Args():
         self.no_cuda = False
         self.overwrite_output_dir = True
         self.overwrite_cache = False
-        self.should_continue = False
+        self.should_continue = True
         self.seed = 42 # raw 42
         self.local_rank = -1
         self.fp16 = False
@@ -1419,18 +1419,18 @@ def main(args):
     tokenizer.add_special_tokens({'cls_token': '[CLS]'})
 
     model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.model_name_or_path, cache_dir=args.model_cache_dir)
-    print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
-    print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
-    print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight.shape)
-    print("config.vocab_size: ", config.vocab_size)
+    # print("cem_emo_encoder:     ", model.cem_emo_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_encoder:     ", model.cem_cog_encoder.embed_tokens.weight.shape)
+    # print("cem_emo_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("cem_cog_ref_encoder: ", model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("emb: ", model.model.shared.weight.shape)
+    # print("config.vocab_size: ", config.vocab_size)
 
     model.resize_token_embeddings(len(tokenizer))
-    print(model.cem_emo_encoder.embed_tokens.weight.shape)
-    print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
-    print("emb: ", model.model.shared.weight.shape)
-    print("config.vocab_size: ", config.vocab_size)
+    # print(model.cem_emo_encoder.embed_tokens.weight.shape)
+    # print(model.cem_emo_ref_encoder.embed_tokens.weight.shape)
+    # print("emb: ", model.model.shared.weight.shape)
+    # print("config.vocab_size: ", config.vocab_size)
     model.to(args.device)
 
     logger.info("Training/evaluation parameters %s", args)
