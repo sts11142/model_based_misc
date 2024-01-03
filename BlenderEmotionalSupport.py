@@ -153,13 +153,13 @@ class Args():
         self.warmup_steps = 120 #raw 120
         self.logging_steps = 30
         self.save_steps = 30
-        self.save_total_limit = None
+        self.save_total_limit = 5
         self.eval_all_checkpoints = False
         self.no_cuda = True
         self.no_cuda = False
         self.overwrite_output_dir = True
         self.overwrite_cache = False
-        self.should_continue = False
+        self.should_continue = True
         self.seed = 42 # raw 42
         self.local_rank = -1
         self.fp16 = False
