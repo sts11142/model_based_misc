@@ -1167,8 +1167,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                             model.module if hasattr(model, "module") else model
                         )  # Take care of distributed/parallel training
                         model_to_save.save_pretrained(output_dir)
-                        model_to_save.save_pretrained(os.path.join(output_dir, "{}-{}".format(checkpoint_prefix, global_step)))
+                        model_to_save.save_pretrained(os.path.join(output_dir, "{}-{}".format(checkpoint_prefix, global_step)))  # 追加
                         tokenizer.save_pretrained(output_dir)
+                        tokenizer.save_pretrained(os.path.join(output_dir, "{}-{}".format(checkpoint_prefix, global_step)))  # 追加
 
                         torch.save(args, os.path.join(output_dir, "training_args.bin"))
                         logger.info("Saving model checkpoint to %s", output_dir)
