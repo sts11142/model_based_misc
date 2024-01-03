@@ -923,7 +923,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             "architecture": "based MISC",
             "dataset": "ESConv MISCver.",
             "epochs": 8,
-        }
+        },
+        # offline mode due to colab netork error
+        mode='offline'
     )
 
 
@@ -947,7 +949,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
  
     # Check if continuing training from a checkpoint
     # if False and args.model_name_or_path and os.path.exists(args.model_name_or_path):
-    if args.output_dir and os.path.exists(args.output_dir):
+    if args.model_name_or_path and os.path.exists(args.model_name_or_path):
         try:
             # set global_step to gobal_step of last saved checkpoint from model path
             checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
