@@ -955,6 +955,8 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             # set global_step to gobal_step of last saved checkpoint from model path
             checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
             print("ok-1")
+            print('checkpoint_suffix: {}'.format(checkpoint_suffix))
+            print(int(checkpoint_suffix))
             global_step = int(checkpoint_suffix)
             print("ok-2")
             epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
