@@ -953,7 +953,8 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     if args.model_name_or_path and os.path.exists(args.model_name_or_path):
         try:
             # set global_step to gobal_step of last saved checkpoint from model path
-            checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
+            # checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
+            checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
             print("ok-1")
             print('checkpoint_suffix: {}'.format(checkpoint_suffix))
             print(int(checkpoint_suffix))
