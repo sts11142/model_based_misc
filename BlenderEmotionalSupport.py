@@ -159,7 +159,7 @@ class Args():
         self.no_cuda = False
         self.overwrite_output_dir = True
         self.overwrite_cache = False
-        self.should_continue = True
+        self.should_continue = False
         self.seed = 42 # raw 42
         self.local_rank = -1
         self.fp16 = False
