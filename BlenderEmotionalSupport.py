@@ -90,15 +90,24 @@ class Args():
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
         # nowtime = '20231227_01_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
-        nowtime = '20231229_06_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime = '20231229_07_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
         nowtime_note = """
-            20231229_06_teian_EELoss
+            20231229_07_teian_EELoss
             EELossに切り替えて正しく実験できるかどうか
             モジュールの切り替えによって、正しく結果に影響があるか
             
             EEモジュールの出力をSLモジュールの入力にする。
             EEモジュールで感情分類を行う。
             EEモジュールの出力を文脈埋め込みとして扱う（なぜか元々そうなっていた←）。
+
+            2024-01-03 14:53 ver 6.1
+            チェックポイントファイルを生成するように変更した。
+            これでファイルが生成されることを確認したら、次はその重みを読み込んで再度学習できることを確認する
+            変更する箇所：
+                self.should_continue
+                self.save_total_limit
+            変更してみたい箇所：
+                self.save_steps
         """
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
@@ -868,7 +877,13 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     )
 
     # Check if saved optimizer or scheduler states exist
-    if False and (
+    # if False and (
+    # if (
+    #     args.model_name_or_path
+    #     and os.path.isfile(os.path.join(args.model_name_or_path, "optimizer.pt"))
+    #     and os.path.isfile(os.path.join(args.model_name_or_path, "scheduler.pt"))
+    # ):
+    if ( # もし output_dir/ 配下にチェックポイントが存在すれば（checkpoint-*/ に重みがあれば）、mainの方でmodel_name_or_pathはその重みのパスに変更されている
         args.model_name_or_path
         and os.path.isfile(os.path.join(args.model_name_or_path, "optimizer.pt"))
         and os.path.isfile(os.path.join(args.model_name_or_path, "scheduler.pt"))
@@ -907,7 +922,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             "gradient_accumulation_steps": args.gradient_accumulation_steps,
             "architecture": "based MISC",
             "dataset": "ESConv MISCver.",
-           "epochs": 10,
+            "epochs": 8,
         }
     )
 
@@ -931,10 +946,11 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     steps_trained_in_current_epoch = 0
  
     # Check if continuing training from a checkpoint
-    if False and args.model_name_or_path and os.path.exists(args.model_name_or_path):
+    # if False and args.model_name_or_path and os.path.exists(args.model_name_or_path):
+    if args.output_dir and os.path.exists(args.output_dir):
         try:
             # set global_step to gobal_step of last saved checkpoint from model path
-            checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
+            checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
             global_step = int(checkpoint_suffix)
             epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
             steps_trained_in_current_epoch = global_step % (len(train_dataloader) // args.gradient_accumulation_steps)
@@ -1122,15 +1138,15 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                         "lm_loss": (tr_lm_loss - logging_lm_loss) / args.logging_steps,
                         "emo_loss": (tr_emo_loss - logging_emo_loss) / args.logging_steps,
                         "strategy_loss": (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
-                        "intensity_loss": (tr_intensity_loss - logging_intensity_loss) / args.logging_steps,
                         "eval_perplexity": results['eval_perplexity'],
-                        "eval_emotion_predict_accuracy": results['eval_emotion_predict_accuracy'],
-                        "eval_strategy_predict_accuracy": results['eval_strategy_predict_accuracy']
+                        "eval_emotion_acc": results['eval_emotion_predict_accuracy'],
+                        "eval_strategy_acc": results['eval_strategy_predict_accuracy']
                     })
 
                     # === debug ===
-                    print(d["x_react"])
-                    print(d["x_react_txt"])
+                    ## 表示は正しかった
+                    # print(d["x_react"])
+                    # print(d["x_react_txt"])
                     # === debug end ===
                     
                     logging_loss = tr_loss
@@ -1149,6 +1165,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                             model.module if hasattr(model, "module") else model
                         )  # Take care of distributed/parallel training
                         model_to_save.save_pretrained(output_dir)
+                        model_to_save.save_pretrained(os.path.join(output_dir, "{}-{}".format(checkpoint_prefix, global_step)))
                         tokenizer.save_pretrained(output_dir)
 
                         torch.save(args, os.path.join(output_dir, "training_args.bin"))
