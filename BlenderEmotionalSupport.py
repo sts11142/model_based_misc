@@ -153,7 +153,7 @@ class Args():
         self.warmup_steps = 120 #raw 120
         self.logging_steps = 30
         self.save_steps = 30
-        self.save_total_limit = 5
+        self.save_total_limit = 3
         self.eval_all_checkpoints = False
         self.no_cuda = True
         self.no_cuda = False
