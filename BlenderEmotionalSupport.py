@@ -891,6 +891,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
         # Load in optimizer and scheduler states
         optimizer.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "optimizer.pt")))
         scheduler.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "scheduler.pt")))
+        print("Load optimizer and scheduler")
 
     if args.fp16:
         try:
@@ -1368,6 +1369,7 @@ def main(args):
             raise ValueError("Used --should_continue but no checkpoint was found in --output_dir.")
         else:
             args.model_name_or_path = sorted_checkpoints[-1]
+            print("overload 'model_name_or_path'")
 
     if (
         os.path.exists(args.output_dir)
