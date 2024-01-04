@@ -34,7 +34,7 @@ import time
 from pathlib import Path
 import json
 
-import wandb
+# import wandb
 
 from src.transformers import (
     MODEL_WITH_LM_HEAD_MAPPING,
@@ -913,21 +913,21 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
         ).to(args.device)
 
     # Weight and Biases
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project="misc-cem-block",
+    # wandb.init(
+    #     # set the wandb project where this run will be logged
+    #     project="misc-cem-block",
         
-        # track hyperparameters and run metadata
-        config={
-            "per_gpu_train_batch_size": args.per_gpu_train_batch_size,
-            "gradient_accumulation_steps": args.gradient_accumulation_steps,
-            "architecture": "based MISC",
-            "dataset": "ESConv MISCver.",
-            "epochs": 8,
-        },
-        # offline mode due to colab netork error
-        mode='offline'
-    )
+    #     # track hyperparameters and run metadata
+    #     config={
+    #         "per_gpu_train_batch_size": args.per_gpu_train_batch_size,
+    #         "gradient_accumulation_steps": args.gradient_accumulation_steps,
+    #         "architecture": "based MISC",
+    #         "dataset": "ESConv MISCver.",
+    #         "epochs": 8,
+    #     },
+    #     # offline mode due to colab netork error
+    #     mode='offline'
+    # )
 
 
     # Train!
@@ -1143,15 +1143,15 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
                                 (tr_emo_loss - logging_emo_loss) / args.logging_steps, (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
                                 (tr_intensity_loss - logging_intensity_loss) / args.logging_steps)
                     
-                    wandb.log({
-                        "loss": (tr_loss - logging_loss) / args.logging_steps,
-                        "lm_loss": (tr_lm_loss - logging_lm_loss) / args.logging_steps,
-                        "emo_loss": (tr_emo_loss - logging_emo_loss) / args.logging_steps,
-                        "strategy_loss": (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
-                        "eval_perplexity": results['eval_perplexity'],
-                        "eval_emotion_acc": results['eval_emotion_predict_accuracy'],
-                        "eval_strategy_acc": results['eval_strategy_predict_accuracy']
-                    })
+                    # wandb.log({
+                    #     "loss": (tr_loss - logging_loss) / args.logging_steps,
+                    #     "lm_loss": (tr_lm_loss - logging_lm_loss) / args.logging_steps,
+                    #     "emo_loss": (tr_emo_loss - logging_emo_loss) / args.logging_steps,
+                    #     "strategy_loss": (tr_strategy_loss - logging_strategy_loss) / args.logging_steps,
+                    #     "eval_perplexity": results['eval_perplexity'],
+                    #     "eval_emotion_acc": results['eval_emotion_predict_accuracy'],
+                    #     "eval_strategy_acc": results['eval_strategy_predict_accuracy']
+                    # })
 
                     # === debug ===
                     ## 表示は正しかった
@@ -1199,7 +1199,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
     if args.local_rank in [-1, 0]:
         tb_writer.close()
     
-    wandb.finish()
+    # wandb.finish()
 
     print("Train finished~")
     return global_step, tr_loss / global_step
