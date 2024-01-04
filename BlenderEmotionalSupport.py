@@ -90,9 +90,9 @@ class Args():
         # nowtime = '01311118'  # teian, no_emo_loss
         # nowtime = '02080141'  # teian, normal_emo_logits
         # nowtime = '20231227_01_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
-        nowtime = '20231229_07_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
+        nowtime = '20231229_08_teian_EELoss'  # encoder4つをそれぞれ個別に学習してみる
         nowtime_note = """
-            20231229_07_teian_EELoss
+            20231229_08_teian_EELoss
             EELossに切り替えて正しく実験できるかどうか
             モジュールの切り替えによって、正しく結果に影響があるか
             
@@ -102,12 +102,8 @@ class Args():
 
             2024-01-03 14:53 ver 6.1
             チェックポイントファイルを生成するように変更した。
-            これでファイルが生成されることを確認したら、次はその重みを読み込んで再度学習できることを確認する
-            変更する箇所：
-                self.should_continue
-                self.save_total_limit
-            変更してみたい箇所：
-                self.save_steps
+            また、重みを読み込んで学習を再開できることを確認。
+
         """
         # nowtime = 'debug'
         # self.output_dir = os.path.join('blender_strategy', TAG)
@@ -955,15 +951,9 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             # set global_step to gobal_step of last saved checkpoint from model path
             # checkpoint_suffix = args.output_dir.split("-")[-1].split("/")[0]
             checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
-            print("ok-1")
-            print('checkpoint_suffix: {}'.format(checkpoint_suffix))
-            print(int(checkpoint_suffix))
             global_step = int(checkpoint_suffix)
-            print("ok-2")
             epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
-            print("ok-3")
             steps_trained_in_current_epoch = global_step % (len(train_dataloader) // args.gradient_accumulation_steps)
-            print("ok-4")
 
             logger.info("  Continuing training from checkpoint, will skip to saved global_step")
             logger.info("  Continuing training from epoch %d", epochs_trained)
