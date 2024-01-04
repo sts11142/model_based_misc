@@ -2125,7 +2125,8 @@ class BlenderbotSmallForConditionalGeneration(BlenderbotSmallPreTrainedModel):
                                       labels.reshape(-1))
             loss = masked_lm_loss.clone()
 
-        if emotion is not None:
+        if False and emotion is not None:
+        # if emotion is not None:
             ## loss関数で切り替えの時に変更するのは2箇所
             ### 1. EELoss: emotion_logitsをemo_logits_cemにするとEELossに
             ###    normal EmoLoss: emotion_logits
