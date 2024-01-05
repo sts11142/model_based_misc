@@ -133,9 +133,10 @@ class Args():
         self.data_cache_dir = './cached'
         self.block_size = 512
 
-        # toggle: do_train or do_only_eval
-        self.do_train = True
-        self.do_only_eval = True  # 追加
+        # toggle: do_train
+        # self.do_train = True
+        self.do_train = False
+        self.do_only_eval = not self.do_train  # 追加
 
         self.do_eval = False
         self.generation = False
