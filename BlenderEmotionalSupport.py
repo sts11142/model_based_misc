@@ -1490,6 +1490,7 @@ def main(args):
         test_results = evaluate(args, model, tokenizer, args.test_dataset, "of test set")
 
     if args.do_only_eval:
+        print("=== do_only_eval ===")
         model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir, from_tf=False)
         model.to(args.device)
         test_results = evaluate(args, model, tokenizer, args.test_dataset, "of test set")
