@@ -132,7 +132,11 @@ class Args():
         self.model_cache_dir = './blender-small'
         self.data_cache_dir = './cached'
         self.block_size = 512
+
+        # toggle: do_train or do_only_eval
         self.do_train = True
+        self.do_only_eval = True  # 追加
+
         self.do_eval = False
         self.generation = False
         self.generate_and_eval = False
@@ -1484,6 +1488,11 @@ def main(args):
         model.to(args.device)
         test_results = evaluate(args, model, tokenizer, args.test_dataset, "of test set")
 
+    if args.do_only_eval:
+        model = BlenderbotSmallForConditionalGeneration.from_pretrained(args.output_dir, from_tf=False)
+        model.to(args.device)
+        test_results = evaluate(args, model, tokenizer, args.test_dataset, "of test set")
+
     generate(args)
 
 def generate(args):
@@ -1809,4 +1818,4 @@ def preprocess(arr, vocab, anw=False, cs=None, emo=False):
 if __name__ == "__main__":
     args = Args()
     main(args)
-    generate(args)
+    # generate(args)  # main(train)でもgenerate()は実行される
