@@ -1687,10 +1687,18 @@ def generate(args):
         # print(tokenizer.decode(input_ids[0]))
         chat_history_ids, mutual_attention, mutual_attention_st, strategy_logits = model.generate(
             input_ids,
-            **paras, max_length=512,min_length=5,num_beams=1,
-            pad_token_id=0,use_cache=True,
-            eos_token_id=tokenizer.eos_token_id, temperature=0.7,
-            top_p=0.3, top_k = 30, do_sample=True, repetition_penalty=1.03) #top_p 0.9, topk 30
+            **paras,
+            max_length=512,
+            min_length=5,
+            num_beams=1,
+            pad_token_id=0,
+            use_cache=True,
+            eos_token_id=tokenizer.eos_token_id,
+            temperature=0.7,
+            top_p=0.3, top_k = 30,
+            do_sample=True,
+            repetition_penalty=1.03) #top_p 0.9, topk 30
+        
         chat_history_ids, mutual_attention, mutual_attention_st = chat_history_ids.cpu(), mutual_attention[-1][0].cpu(), mutual_attention_st[-1][0].cpu()
         mutual_attention = torch.mean(mutual_attention, dim=0)
         mutual_attention_st = torch.mean(mutual_attention_st, dim=0)
@@ -1704,11 +1712,13 @@ def generate(args):
         # else:
         #     strategy_hits.append(0)
         refs.append(tokenizer.decode(chat_history_ids[:, :][0], skip_special_tokens=True))
-        # print(tokenizer.decode(chat_history_ids[:, :][0], skip_special_tokens=True))
-        strategy_record.append({"ref strategy":tokenizer.decode([next_strategy_id + 54944]),  "hyp strategy":tokenizer.decode([strategy_logits[0].argmax()+54944])})
-        # print({"ref strategy":tokenizer.decode([next_strategy_id + 54944]),  "hyp strategy":tokenizer.decode([chat_history_ids[:, :][0][1]])})
-        # print({"ref strategy": tokenizer.decode([next_strategy_id + 54944]),
-            #    "hyp strategy": tokenizer.decode([strategy_logits[0].argmax() + 54944])})
+        strategy_record.append(
+            {
+                "ref strategy": tokenizer.decode([next_strategy_id + 54944]),
+                "hyp strategy": tokenizer.decode([strategy_logits[0].argmax()+54944])
+            }
+        )
+
         if strategy_logits[0].argmax() == next_strategy_id:
             strategy_hits.append(1)
         else:
@@ -1720,16 +1730,17 @@ def generate(args):
         strategy_logits = strategy_logits[0].cpu().numpy().tolist()
         strategy_logits = ["%.4f" % logit for logit in strategy_logits]
         strategy_logit_str.append('\t'.join(strategy_logits))
-        # print(strategy_logit_str)
-        # print(strategy_hits_topk)
-        # print(1 / 0)
+
     for i in range(8):
         print(sum(strategy_hits_topk[i]) / len(strategy_hits_topk[i]))
     print('strategy predict accuray', sum(strategy_hits)/len(strategy_hits))
+
     all_top_k_blocks = extract_top_k_attention_comet_block(mutual_attentions, comet[:-1], 5)
     all_top_k_blocks_st = extract_top_k_attention_comet_block(mutual_attentions_st, comet_st[:-1], 5)
+
     if not os.path.exists(args.generation_dir):
         os.makedirs(args.generation_dir)
+    
     test_file_path = "dataset/testWithStrategy_short.tsv"
     test_situation_file_path = "dataset/testSituation.txt"
     strategy_record_file_path = os.path.join(args.generation_dir, "strategy_record.json")
@@ -1738,6 +1749,7 @@ def generate(args):
     summary_file_path = os.path.join(args.generation_dir, "summary.txt")
     strategy_logits_file = os.path.join(args.generation_dir, "strategy_logits.txt")
     metrics_file_path = os.path.join(args.generation_dir, "metrics_result.txt")
+
     with open(strategy_logits_file, "w", encoding="utf-8") as f:
         for item in strategy_logit_str:
             f.write(item + '\n')
@@ -1748,14 +1760,17 @@ def generate(args):
         json.dump(refs,f,indent=2,ensure_ascii=False)
     with open(reference_file_path,"w",encoding="utf-8") as f:
         json.dump(gts,f,indent=2,ensure_ascii=False)
+
     summary(test_file_path, generate_file_path, reference_file_path, summary_file_path, all_top_k_blocks, all_top_k_blocks_st, chat_texts, test_situation_file_path)
 
     print("write result to:", summary_file_path)
     print("Generate finished~")
+
     metric = Metric(toker=tokenizer, hyp_path=generate_file_path, ref_path=reference_file_path)
     result, result_list = metric.close()
-    print(result)
     result['acc'] = sum(strategy_hits)/len(strategy_hits)
+    print(result)
+
     with open(metrics_file_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
     print("=" * 100)
